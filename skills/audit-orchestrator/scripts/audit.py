@@ -1,11 +1,24 @@
 import site
 import sys
+import os
 import json
 import importlib.util
 from pathlib import Path
 from collections import Counter
 from datetime import datetime, timezone
 from urllib.parse import urlparse
+
+# Reconfigure stdout and stderr for UTF-8 with error replacement
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+if hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
 
 PROJECT_ROOT = Path(
     __file__
@@ -95,19 +108,21 @@ def run_specialist(
 ):
 
     print(
-        f"\nRunning {name}..."
+        f"\nRunning {name}...",
+        flush=True
     )
 
     try:
 
         result = function(
             url,
-            max_pages=10,
-            max_depth=2
+            max_pages=5,
+            max_depth=1
         )
 
         print(
-            f"{name} completed."
+            f"{name} completed.",
+            flush=True
         )
 
         return result, "completed"
@@ -115,7 +130,8 @@ def run_specialist(
     except Exception as error:
 
         print(
-            f"{name} failed: {error}"
+            f"{name} failed: {error}",
+            flush=True
         )
 
         return {
@@ -406,18 +422,17 @@ def build_report(
     crawl_errors = []
 
     for result in results.values():
-
-        crawl_errors.extend(
-            result.get(
-                "crawl_errors",
-                []
+        if isinstance(result, dict):
+            crawl_errors.extend(
+                result.get(
+                    "crawl_errors",
+                    []
+                )
             )
-        )
 
-        readiness_score = calculate_readiness_score(
-    findings
+    readiness_score = calculate_readiness_score(
+        findings
     )
-        
 
     readiness_label = get_readiness_label(
         readiness_score
@@ -456,21 +471,24 @@ def build_report(
             "LOW"
         )
 
-        if priority in ["URGENT", "HIGH"]:
+        if str(priority).upper() in ["URGENT", "HIGH"]:
+            action = finding.get("suggested_action", "Review this finding.")
+            if isinstance(action, dict):
+                action_text = action.get("summary", "Review this finding.")
+            else:
+                action_text = str(action)
 
             priority_actions.append({
                 "finding_id": finding.get("id"),
-                "action": finding.get(
-                    "suggested_action",
-                    "Review this finding."
-                ),
-                "priority": priority
+                "action": action_text,
+                "priority": str(priority).lower()
             })
 
     report = {
 
         
     "site": site,
+    "target_url": url,
 
     "audited_at": datetime.now(
         timezone.utc
@@ -560,22 +578,34 @@ def save_json_report(
             ensure_ascii=False
         )
 
+def safe_print(text=""):
+    try:
+        print(text)
+    except Exception:
+        try:
+            encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+            clean_text = str(text).encode(encoding, errors="replace").decode(encoding)
+            sys.stdout.write(clean_text + "\n")
+            sys.stdout.flush()
+        except Exception:
+            pass
+
 def print_report(report):
 
-    print(
+    safe_print(
         "\n"
         + "=" * 60
     )
 
-    print(
+    safe_print(
         "BRAND AI READINESS AUDIT"
     )
 
-    print(
+    safe_print(
         "=" * 60
     )
 
-    print(
+    safe_print(
         f"Target URL: "
         f"{report['site']}"
     )
@@ -585,12 +615,12 @@ def print_report(report):
     {}
     )
 
-    print(
+    safe_print(
         f"AI Readiness Score: "
         f"{readiness.get('score', 0)}/100"
     )
 
-    print(
+    safe_print(
         f"Readiness Level: "
         f"{readiness.get('label', 'Unknown')}"
     )
@@ -600,17 +630,17 @@ def print_report(report):
     {}
     )
 
-    print(
+    safe_print(
         f"On-Site Engagement Readiness: "
         f"{engagement.get('score', 0)}/100"
     )
 
-    print(
+    safe_print(
         f"Engagement Level: "
         f"{engagement.get('label', 'Unknown')}"
     )
 
-    print(
+    safe_print(
     "\nEngagement Dimensions:"
     )
 
@@ -619,36 +649,36 @@ def print_report(report):
         {}
     ).items():
 
-        print(
+        safe_print(
             f"  {dimension}: {score}/100"
         )
 
-    print(
+    safe_print(
         f"Pages checked: "
         f"{report['summary']['pages_checked']}"
     )
 
-    print(
+    safe_print(
         f"Total findings: "
         f"{report['summary']['total_findings']}"
     )
 
-    print("\nPRIORITY ACTIONS")
-    print("-" * 60)
+    safe_print("\nPRIORITY ACTIONS")
+    safe_print("-" * 60)
 
     for action in report.get("priority_actions", []):
 
-        print(
+        safe_print(
             f"[{action['priority']}] "
             f"{action['finding_id']}"
         )
 
-        print(
+        safe_print(
             f"Action: "
             f"{action['action']}"
         )
 
-    print(
+    safe_print(
         "\nSeverity Summary:"
     )
 
@@ -668,11 +698,11 @@ def print_report(report):
             0
         )
 
-        print(
+        safe_print(
             f"  {severity}: {count}"
         )
 
-    print(
+    safe_print(
         "\nFindings:"
     )
 
@@ -681,48 +711,48 @@ def print_report(report):
         start=1
     ):
 
-        print(
+        safe_print(
             "\n"
             + "-" * 60
         )
 
-        print(
+        safe_print(
             f"{index}. "
             f"[{finding.get('severity', 'info').upper()}] "
             f"{finding.get('title', '')}"
         )
 
-        print(
+        safe_print(
             f"ID: "
             f"{finding.get('id', '')}"
         )
 
-        print(
+        safe_print(
             f"Category: "
             f"{finding.get('category', '')}"
         )
 
-        print(
+        safe_print(
             f"Priority: "
             f"{finding.get('priority', 'LOW')}"
         )
 
-        print(
+        safe_print(
             f"Confidence: "
             f"{finding.get('confidence', '')}"
         )
 
-        print(
+        safe_print(
             f"URL: "
             f"{finding.get('source_url', '')}"
         )
 
-        print(
+        safe_print(
             f"Evidence: "
             f"{finding.get('evidence', '')}"
         )
 
-        print(
+        safe_print(
             f"Impact: "
             f"{finding.get('impact', '')}"
         )
@@ -748,12 +778,12 @@ def print_report(report):
                 action
             )
 
-        print(
+        safe_print(
             f"Suggested action: "
             f"{action_text}"
         )
 
-        print(
+        safe_print(
     "\nRecommendations:"
 )
 
@@ -762,23 +792,23 @@ def print_report(report):
         start=1
     ):
 
-        print(
+        safe_print(
             "\n"
             + "-" * 60
         )
 
-        print(
+        safe_print(
             f"{index}. "
             f"[{recommendation['priority'].upper()}] "
             f"{recommendation['title']}"
         )
 
-        print(
+        safe_print(
             f"Action: "
             f"{recommendation['action']}"
         )
 
-        print(
+        safe_print(
             f"Finding ID: "
             f"{recommendation['finding_id']}"
         )
@@ -826,11 +856,14 @@ def main():
         normalized
     )
 
-    output_path = (
-        PROJECT_ROOT
-        / "reports"
-        / "audit_report.json"
-    )
+    if len(sys.argv) > 2 and sys.argv[2]:
+        output_path = Path(sys.argv[2]).resolve()
+    else:
+        output_path = (
+            PROJECT_ROOT
+            / "reports"
+            / "audit_report.json"
+        )
 
     save_json_report(
         report,
@@ -848,6 +881,19 @@ def main():
     print(
         output_path
     )
+
+    if report.get("summary", {}).get("pages_checked", 0) == 0:
+        print(
+            "\nERROR: No pages could be crawled or accessed. Target URL is unreachable.",
+            file=sys.stderr,
+            flush=True,
+        )
+        if output_path.exists():
+            try:
+                output_path.unlink()
+            except OSError:
+                pass
+        return 1
 
     return 0
 

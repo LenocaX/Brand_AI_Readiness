@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 
 from core.models import PageData
 from core.robots import is_allowed
+from core.url_utils import is_safe_public_url
 
 
 HEADERS = {
@@ -358,6 +359,8 @@ def extract_page(
 
 
 def fetch_page(url: str):
+    if not is_safe_public_url(url):
+        return (None, 0)
 
     """
     Download a webpage.
@@ -375,6 +378,9 @@ def fetch_page(url: str):
 
             allow_redirects=True
         )
+
+        if not is_safe_public_url(response.url):
+            return (None, 0)
 
         content_type = (
             response

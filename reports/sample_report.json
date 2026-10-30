@@ -1,0 +1,237 @@
+{
+  "site": "jiitshelf.vercel.app",
+  "audited_at": "2026-10-29T18:28:27.767846+00:00",
+  "specialist_status": {
+    "crawl": "completed",
+    "structured_data": "completed",
+    "content_extractability": "completed",
+    "freshness": "completed",
+    "engagement": "completed"
+  },
+  "readiness": {
+    "score": 74,
+    "label": "Needs Improvement"
+  },
+  "engagement": {
+    "score": 95,
+    "label": "Excellent",
+    "dimensions": {
+      "clarity": 90,
+      "navigation": 86,
+      "orientation": 100,
+      "content_accessibility": 93,
+      "cta_clarity": 100,
+      "context_retention": 100
+    }
+  },
+  "summary": {
+    "total_findings": 9,
+    "pages_checked": 1,
+    "crawl_errors": 0
+  },
+  "severity_summary": {
+    "critical": 0,
+    "high": 0,
+    "medium": 5,
+    "low": 4,
+    "info": 0
+  },
+  "category_summary": {
+    "metadata": 1,
+    "content_structure": 1,
+    "rendering": 1,
+    "structured_data": 1,
+    "engagement": 3
+  },
+  "priority_actions": [
+    {
+      "finding_id": "CE-002",
+      "action": "Ensure the page explicitly states its main purpose, key facts, and relevant information in readable text.",
+      "priority": "medium"
+    },
+    {
+      "finding_id": "EA-001",
+      "action": "Add one clear, descriptive H1 heading that states the main purpose or subject of the page.",
+      "priority": "medium"
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "medium",
+      "finding_id": "CE-002",
+      "title": "Increase machine-readable content",
+      "action": "Ensure the page explicitly states its main purpose, key facts, entities, and relevant information in readable HTML text.",
+      "source_url": "https://jiitshelf.vercel.app/"
+    },
+    {
+      "priority": "medium",
+      "finding_id": "EA-001",
+      "title": "Add a clear primary heading (H1)",
+      "action": "Add one clear, descriptive H1 heading that states the main purpose or subject of the page.",
+      "source_url": "https://jiitshelf.vercel.app/"
+    },
+    {
+      "priority": "medium",
+      "finding_id": "EA-002",
+      "title": "Improve primary navigation",
+      "action": "Provide a clear, consistently placed primary navigation with descriptive links to the site sections.",
+      "source_url": "https://jiitshelf.vercel.app/"
+    },
+    {
+      "priority": "medium",
+      "finding_id": "EA-004",
+      "title": "Resolve navigation dead end",
+      "action": "Add relevant internal links or a contextually appropriate next action that helps visitors continue their journey.",
+      "source_url": "https://jiitshelf.vercel.app/"
+    },
+    {
+      "priority": "low",
+      "finding_id": "CR-DESC-001",
+      "title": "Add meta description",
+      "action": "Add a concise meta description that accurately summarizes the page content.",
+      "source_url": "https://jiitshelf.vercel.app/"
+    },
+    {
+      "priority": "low",
+      "finding_id": "CR-OG-001",
+      "title": "Add Open Graph metadata",
+      "action": "Include Open Graph tags to improve link previews on social platforms.",
+      "source_url": "https://jiitshelf.vercel.app/"
+    },
+    {
+      "priority": "low",
+      "finding_id": "SD-001",
+      "title": "Review structured data opportunities",
+      "action": "Consider adding relevant JSON-LD structured data (e.g., Organization, Product, Article) if applicable to the site.",
+      "source_url": "https://jiitshelf.vercel.app/"
+    }
+  ],
+  "findings": [
+    {
+      "id": "CR-CRAWL-001",
+      "category": "crawl_render",
+      "title": "Crawl error encountered",
+      "severity": "medium",
+      "confidence": 1.0,
+      "evidence": "Could not fetch: https://jiitshelf.vercel.app/ (status=0)",
+      "impact": "The audit could not access or analyze a page.",
+      "suggested_action": {
+        "summary": "Investigate the reported crawl error.",
+        "priority": "medium"
+      },
+      "source_url": "https://jiitshelf.vercel.app/"
+    },
+    {
+      "id": "CE-002",
+      "category": "content_extractability",
+      "title": "Very little readable text detected",
+      "severity": "medium",
+      "confidence": 0.85,
+      "evidence": "The crawled page contains approximately 2 readable words, which is very little textual content for machine interpretation.",
+      "impact": "A page with very little machine-readable text may provide insufficient explicit context for automated systems.",
+      "suggested_action": {
+        "summary": "Ensure the page explicitly states its main purpose, key facts, entities, and user-relevant information in readable HTML text.",
+        "priority": "medium"
+      },
+      "source_url": "https://jiitshelf.vercel.app/"
+    },
+    {
+      "id": "EA-001",
+      "category": "engagement",
+      "title": "No H1 heading detected",
+      "severity": "medium",
+      "confidence": 0.94,
+      "evidence": "The page contains no detectable <h1> heading element in the DOM tree.",
+      "impact": "Visitors and search crawlers may have less immediate orientation about the primary subject of the page.",
+      "suggested_action": {
+        "summary": "Add one clear, descriptive H1 heading that states the main purpose or subject of the page.",
+        "priority": "medium"
+      },
+      "source_url": "https://jiitshelf.vercel.app/"
+    },
+    {
+      "id": "EA-004",
+      "category": "engagement",
+      "title": "Page appears to be a navigation dead end",
+      "severity": "medium",
+      "confidence": 0.88,
+      "evidence": "No outbound navigation links or next-step actions were detected on the crawled page.",
+      "impact": "Visitors reaching this page have no visible pathways to discover more content or continue their journey.",
+      "suggested_action": {
+        "summary": "Add relevant internal links or a contextually appropriate next action that helps visitors continue their journey.",
+        "priority": "medium"
+      },
+      "source_url": "https://jiitshelf.vercel.app/"
+    },
+    {
+      "id": "EA-002",
+      "category": "engagement",
+      "title": "No clear primary navigation detected",
+      "severity": "medium",
+      "confidence": 0.84,
+      "evidence": "No <nav> element containing links and no obvious header navigation links were detected on the page.",
+      "impact": "Visitors may have difficulty discovering related sections or continuing through the website.",
+      "suggested_action": {
+        "summary": "Provide a clear, consistently placed primary navigation with descriptive links to the site main sections.",
+        "priority": "medium"
+      },
+      "source_url": "https://jiitshelf.vercel.app/"
+    },
+    {
+      "id": "CR-DESC-001",
+      "category": "crawl_render",
+      "title": "Missing meta description",
+      "severity": "low",
+      "confidence": 1.0,
+      "evidence": "No <meta name=\"description\"> tag was found in the HTML document head.",
+      "impact": "The page provides less explicit summary metadata for crawlers and snippet generators.",
+      "suggested_action": {
+        "summary": "Add a concise meta description that accurately summarizes the page content.",
+        "priority": "low"
+      },
+      "source_url": "https://jiitshelf.vercel.app/"
+    },
+    {
+      "id": "CR-OG-001",
+      "category": "crawl_render",
+      "title": "Missing Open Graph metadata",
+      "severity": "low",
+      "confidence": 1.0,
+      "evidence": "No Open Graph meta properties (og:title, og:description, og:image) were detected in the page head.",
+      "impact": "Links shared on social networks or messaging applications will lack customized visual previews.",
+      "suggested_action": {
+        "summary": "Include Open Graph tags to improve link previews on social platforms.",
+        "priority": "low"
+      },
+      "source_url": "https://jiitshelf.vercel.app/"
+    },
+    {
+      "id": "CR-TW-001",
+      "category": "crawl_render",
+      "title": "Missing Twitter Card metadata",
+      "severity": "low",
+      "confidence": 1.0,
+      "evidence": "No twitter:card or associated Twitter metadata tags were detected.",
+      "impact": "Previews on Twitter/X will default to generic fallback formatting.",
+      "suggested_action": {
+        "summary": "Include Twitter Card tags to improve link previews on X/Twitter.",
+        "priority": "low"
+      },
+      "source_url": "https://jiitshelf.vercel.app/"
+    },
+    {
+      "id": "SD-001",
+      "category": "structured_data",
+      "title": "Consider adding structured data",
+      "severity": "low",
+      "confidence": 1.0,
+      "evidence": "No JSON-LD script blocks (<script type=\"application/ld+json\">) were found in the page markup.",
+      "impact": "The page does not expose Schema.org structured entities for automated knowledge graph ingestion.",
+      "suggested_action": {
+        "summary": "Consider adding relevant Schema.org JSON-LD structured data (e.g., Organization, Product, Article) if applicable.",
+        "priority": "low"
+      },
+      "source_url": "https://jiitshelf.vercel.app/"
+    }
+  ]
+}

@@ -69,11 +69,11 @@ export const AppShell: React.FC<AppShellProps> = ({
       <Modal
         isOpen={isAboutOpen}
         onClose={() => setIsAboutOpen(false)}
-        title="About Brand AI-Readiness Audit"
+        title="About Canopy"
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
           <p>
-            <strong>Brand AI-Readiness Audit</strong> is an automated diagnostic platform that evaluates how artificial intelligence agents, LLM search engines (such as Perplexity, Google AI Overviews, and Bing Copilot), and automated retrieval systems interpret public website content.
+            <strong>Canopy</strong> is an automated diagnostic platform that evaluates how artificial intelligence agents, LLM search engines (such as Perplexity, Google AI Overviews, and Bing Copilot), and automated retrieval systems interpret public website content.
           </p>
           <p>
             While legacy SEO focuses on keywords and backlinks, modern AI crawlers rely heavily on <em>machine extractability</em>: explicit HTML text, Schema.org JSON-LD entities, heading hierarchies, client-side rendering parity, and clear navigation context.
