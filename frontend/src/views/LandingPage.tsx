@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Button } from '../design-system/Button';
 import { Badge } from '../design-system/Badge';
 import { ArrowRight, StatusDot, ExternalLink } from '../design-system/Indicators';
-import { sampleReport } from '../mock/sampleReport';
 
 export interface LandingPageProps {
   onStartAudit: (url: string) => void;
@@ -87,276 +86,134 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
       {/* Hero Section */}
-      <section style={{ padding: 'var(--space-8) 0 var(--space-10)' }}>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-            gap: 'var(--space-10)',
-            alignItems: 'center',
-          }}
-        >
-          {/* Left Column: Headline, Description, Input Form */}
-          <div>
-            <div className="page-eyebrow">MAKE YOUR BRAND UNDERSTANDABLE TO AI</div>
-            <h1
-              className="font-serif"
-              style={{
-                fontSize: 'clamp(2rem, 4vw, 2.75rem)',
-                fontWeight: 500,
-                lineHeight: 'var(--leading-tight)',
-                color: 'var(--color-charcoal)',
-                marginBottom: 'var(--space-4)',
-                letterSpacing: 'var(--tracking-tight)',
-              }}
-            >
-              See how AI and visitors interpret your website.
-            </h1>
+      <section style={{ padding: 'var(--space-10) 0 var(--space-12)', maxWidth: '840px', margin: '0 auto' }}>
+        <div>
+          <div className="page-eyebrow">CANOPY &middot; BRAND AI-READINESS AUDIT</div>
+          <h1
+            className="font-serif"
+            style={{
+              fontSize: 'clamp(2.25rem, 4.5vw, 3.25rem)',
+              fontWeight: 500,
+              lineHeight: 'var(--leading-tight)',
+              color: 'var(--color-charcoal)',
+              marginBottom: 'var(--space-4)',
+              letterSpacing: 'var(--tracking-tight)',
+            }}
+          >
+            See how AI and visitors interpret your website.
+          </h1>
 
-            <p
-              style={{
-                fontSize: 'var(--text-base)',
-                color: 'var(--color-charcoal-muted)',
-                lineHeight: 'var(--leading-relaxed)',
-                marginBottom: 'var(--space-6)',
-              }}
-            >
-              Audit discoverability, content, structure and user experience. Get evidence-backed findings and clear recommendations without invasive modifications.
-            </p>
+          <p
+            style={{
+              fontSize: 'var(--text-lg)',
+              color: 'var(--color-charcoal-muted)',
+              lineHeight: 'var(--leading-relaxed)',
+              marginBottom: 'var(--space-8)',
+              maxWidth: '700px',
+            }}
+          >
+            Canopy audits your website&apos;s AI discoverability, content extractability, structured data, and visitor orientation. Get clear, evidence-backed findings and actionable recommendations without invasive modifications.
+          </p>
 
-            {/* URL Submission Form */}
-            <form onSubmit={handleSubmit} style={{ marginBottom: 'var(--space-4)' }}>
-              <div className="input-wrapper">
-                <label htmlFor="landing-url-input" className="input-label">
-                  Target Website URL
-                </label>
-                <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
-                  <input
-                    id="landing-url-input"
-                    type="text"
-                    className="input-field"
-                    style={{
-                      flex: '1 1 180px',
-                      minWidth: '0',
-                      borderColor: activeError ? 'var(--color-critical)' : undefined,
-                    }}
-                    value={url}
-                    onChange={(e) => {
-                      setUrl(e.target.value);
-                      if (validationError) setValidationError('');
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleSubmit();
-                      }
-                    }}
-                    placeholder="https://example.com"
-                    disabled={isLoading}
-                    aria-invalid={!!activeError}
-                    aria-describedby={activeError ? 'url-error-msg' : 'url-helper-msg'}
-                  />
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    disabled={isLoading}
-                    icon={
-                      isLoading ? (
-                        <span className="symbol-dot" style={{ backgroundColor: 'var(--color-ivory-light)' }} />
-                      ) : (
-                        <ArrowRight size={14} color="var(--color-ivory-light)" />
-                      )
+          {/* URL Submission Form */}
+          <form onSubmit={handleSubmit} style={{ marginBottom: 'var(--space-4)' }}>
+            <div className="input-wrapper" style={{ maxWidth: '640px' }}>
+              <label htmlFor="landing-url-input" className="input-label">
+                Target Website URL
+              </label>
+              <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+                <input
+                  id="landing-url-input"
+                  type="text"
+                  className="input-field"
+                  style={{
+                    flex: '1 1 240px',
+                    minWidth: '0',
+                    fontSize: 'var(--text-base)',
+                    padding: '0.75rem 1rem',
+                    borderColor: activeError ? 'var(--color-critical)' : undefined,
+                  }}
+                  value={url}
+                  onChange={(e) => {
+                    setUrl(e.target.value);
+                    if (validationError) setValidationError('');
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSubmit();
                     }
-                  >
-                    {isLoading ? 'Starting Audit...' : 'Start Audit'}
-                  </Button>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'var(--space-2)', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
-                  {activeError ? (
-                    <span id="url-error-msg" className="input-error" role="alert">
-                      {activeError}
-                    </span>
-                  ) : (
-                    <span id="url-helper-msg" className="input-hint">
-                      Enter any public HTTP or HTTPS web address to begin inspection.
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    onClick={onViewSample}
-                    disabled={isLoading}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      padding: 0,
-                      color: 'var(--color-forest)',
-                      fontSize: 'var(--text-xs)',
-                      textDecoration: 'underline',
-                      cursor: 'pointer',
-                      fontWeight: 600,
-                    }}
-                  >
-                    View Sample Report &rarr;
-                  </button>
-                </div>
-              </div>
-            </form>
-
-            {/* Security and Privacy Assurance Badges */}
-            <div
-              style={{
-                display: 'flex',
-                gap: 'var(--space-2)',
-                flexWrap: 'wrap',
-                marginTop: 'var(--space-4)',
-              }}
-            >
-              <Badge variant="neutral" showDot>
-                Read-only audit
-              </Badge>
-              <Badge variant="neutral" showDot>
-                Public website only
-              </Badge>
-              <Badge variant="neutral" showDot>
-                No data is stored
-              </Badge>
-            </div>
-          </div>
-
-          {/* Right Column: Restrained Product Preview using real sample report data */}
-          <div>
-            <div
-              style={{
-                backgroundColor: 'var(--color-surface-white)',
-                border: '1px solid var(--color-border)',
-                borderRadius: 'var(--radius-sm)',
-                overflow: 'hidden',
-              }}
-            >
-              {/* Minimal Browser Frame Header */}
-              <div
-                style={{
-                  backgroundColor: 'var(--color-ivory)',
-                  borderBottom: '1px solid var(--color-border)',
-                  padding: 'var(--space-2) var(--space-4)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-3)',
-                }}
-              >
-                <div style={{ display: 'flex', gap: '4px' }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-border)' }} />
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-border)' }} />
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-border)' }} />
-                </div>
-                <div
-                  className="font-mono"
-                  style={{
-                    fontSize: 'var(--text-2xs)',
-                    color: 'var(--color-charcoal-muted)',
-                    backgroundColor: 'var(--color-surface-white)',
-                    border: '1px solid var(--color-border)',
-                    padding: '2px 8px',
-                    borderRadius: 'var(--radius-sm)',
-                    flex: 1,
                   }}
+                  placeholder="https://example.com"
+                  disabled={isLoading}
+                  aria-invalid={!!activeError}
+                  aria-describedby={activeError ? 'url-error-msg' : 'url-helper-msg'}
+                />
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  disabled={isLoading}
+                  icon={
+                    isLoading ? (
+                      <span className="symbol-dot" style={{ backgroundColor: 'var(--color-ivory-light)' }} />
+                    ) : (
+                      <ArrowRight size={16} color="var(--color-ivory-light)" />
+                    )
+                  }
                 >
-                  https://{sampleReport.site}
-                </div>
+                  {isLoading ? 'Starting Audit...' : 'Start Audit'}
+                </Button>
               </div>
 
-              {/* Sample Site Representation */}
-              <div style={{ padding: 'var(--space-6)', position: 'relative' }}>
-                <div
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'var(--space-3)', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+                {activeError ? (
+                  <span id="url-error-msg" className="input-error" role="alert">
+                    {activeError}
+                  </span>
+                ) : (
+                  <span id="url-helper-msg" className="input-hint">
+                    Enter any public HTTP or HTTPS web address to begin inspection.
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={onViewSample}
+                  disabled={isLoading}
                   style={{
-                    border: '1px dashed var(--color-border)',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: 'var(--space-6)',
-                    backgroundColor: 'var(--color-ivory-light)',
-                    textAlign: 'center',
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    color: 'var(--color-forest)',
+                    fontSize: 'var(--text-xs)',
+                    textDecoration: 'underline',
+                    cursor: 'pointer',
+                    fontWeight: 600,
                   }}
                 >
-                  <div
-                    className="font-serif"
-                    style={{ fontSize: 'var(--text-xl)', fontWeight: 600, color: 'var(--color-charcoal)' }}
-                  >
-                    JitShelf
-                  </div>
-                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-charcoal-muted)', marginTop: '4px' }}>
-                    Buy, Sell, Exchange. Within JIIT.
-                  </div>
-
-                  <div style={{ display: 'flex', gap: 'var(--space-2)', justifyContent: 'center', marginTop: 'var(--space-4)' }}>
-                    <span
-                      style={{
-                        padding: '4px 10px',
-                        fontSize: 'var(--text-xs)',
-                        backgroundColor: 'var(--color-forest)',
-                        color: 'var(--color-ivory-light)',
-                        borderRadius: 'var(--radius-sm)',
-                      }}
-                    >
-                      Browse Listings
-                    </span>
-                    <span
-                      style={{
-                        padding: '4px 10px',
-                        fontSize: 'var(--text-xs)',
-                        border: '1px solid var(--color-border)',
-                        backgroundColor: 'var(--color-surface-white)',
-                        borderRadius: 'var(--radius-sm)',
-                      }}
-                    >
-                      Post an Item
-                    </span>
-                  </div>
-                </div>
-
-                {/* Overlaid Authentic Sample Score Badge */}
-                <div
-                  style={{
-                    marginTop: 'var(--space-4)',
-                    backgroundColor: 'var(--color-surface-white)',
-                    border: '1px solid var(--color-border)',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: 'var(--space-3) var(--space-4)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: 'var(--text-xs)', textTransform: 'uppercase', color: 'var(--color-charcoal-muted)', fontWeight: 600 }}>
-                      AI Readability
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
-                      <span className="font-serif" style={{ fontSize: 'var(--text-2xl)', fontWeight: 600 }}>
-                        {sampleReport.readiness.score}
-                      </span>
-                      <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-charcoal-subtle)' }}>/100</span>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                    <Badge variant="medium">
-                      {sampleReport.readiness.label}
-                    </Badge>
-                    <button
-                      onClick={onViewSample}
-                      style={{
-                        fontSize: 'var(--text-xs)',
-                        color: 'var(--color-forest)',
-                        textDecoration: 'underline',
-                        cursor: 'pointer',
-                        padding: 0,
-                      }}
-                    >
-                      Inspect Sample Report →
-                    </button>
-                  </div>
-                </div>
+                  View Sample Report &rarr;
+                </button>
               </div>
             </div>
+          </form>
+
+          {/* Security and Privacy Assurance Badges */}
+          <div
+            style={{
+              display: 'flex',
+              gap: 'var(--space-2)',
+              flexWrap: 'wrap',
+              marginTop: 'var(--space-5)',
+            }}
+          >
+            <Badge variant="neutral" showDot>
+              Read-only audit
+            </Badge>
+            <Badge variant="neutral" showDot>
+              Public website only
+            </Badge>
+            <Badge variant="neutral" showDot>
+              No data is stored
+            </Badge>
           </div>
         </div>
       </section>
@@ -638,7 +495,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             Explore an authentic audit before running yours
           </h4>
           <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-charcoal-muted)', marginTop: '2px' }}>
-            Review all 7 findings, confidence ratings, evidence snippets, and recommendations for jiitshelf.vercel.app.
+            Review findings, confidence ratings, evidence snippets, and recommendations from our sample audit report.
           </p>
         </div>
 

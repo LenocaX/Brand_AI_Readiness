@@ -523,6 +523,7 @@ def audit_site(
     # Page checks
     # -------------------------
 
+    rendered_count = 0
     for page in pages:
 
         findings.extend(
@@ -548,9 +549,11 @@ def audit_site(
             )
         )
 
-        findings.extend(
-            check_rendering(page)
-        )
+        if rendered_count < 2:
+            findings.extend(
+                check_rendering(page)
+            )
+            rendered_count += 1
 
     # -------------------------
     # Remove duplicates

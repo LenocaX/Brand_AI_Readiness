@@ -1,5 +1,4 @@
 import React from 'react';
-import { BrandMark } from '../design-system/Indicators';
 import { Button } from '../design-system/Button';
 import { ActiveView } from '../types/audit';
 
@@ -18,13 +17,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   return (
     <aside className="app-sidebar" aria-label="Sidebar Navigation">
-      <div className="sidebar-header">
-        <div className="sidebar-brand">
-          <BrandMark size={18} color="var(--color-sage)" />
-          <span>Brand AI-Readiness</span>
-        </div>
-      </div>
-
       <div className="sidebar-body">
         <Button
           variant="outline-ivory"

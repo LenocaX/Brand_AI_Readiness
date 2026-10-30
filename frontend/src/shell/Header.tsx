@@ -1,5 +1,4 @@
 import React from 'react';
-import { BrandMark } from '../design-system/Indicators';
 import { Button } from '../design-system/Button';
 import { ActiveView } from '../types/audit';
 
@@ -23,18 +22,33 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="app-header" role="banner">
       <div className="header-brand">
-        <BrandMark size={20} color="var(--color-sage)" />
         <button
+          type="button"
           onClick={() => onNavigate('landing')}
+          className="header-brand-button"
+          aria-label="Canopy Home"
           style={{
-            fontWeight: 600,
-            fontSize: 'var(--text-sm)',
-            color: 'var(--color-ivory)',
-            letterSpacing: 'var(--tracking-tight)',
+            background: 'var(--color-ivory-light)',
+            border: '1px solid var(--color-forest-border)',
+            borderRadius: 'var(--radius-sm)',
+            padding: '4px 10px',
             cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            textDecoration: 'none',
+            transition: 'opacity 0.15s ease',
           }}
         >
-          Brand AI-Readiness Audit
+          <img
+            src="/canopy-web-logo.svg"
+            alt="Canopy"
+            style={{
+              height: '24px',
+              width: 'auto',
+              display: 'block',
+              objectFit: 'contain',
+            }}
+          />
         </button>
       </div>
 
