@@ -1,0 +1,92 @@
+/* Base Reset & Design System Constraints */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  /* Strictly enforce no drop shadows */
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+html {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: var(--leading-normal);
+  color: var(--color-charcoal);
+  background-color: var(--color-ivory);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100vh;
+  background-color: var(--color-ivory);
+  color: var(--color-charcoal);
+  overflow-x: hidden;
+}
+
+/* Accessible focus outlines across all interactive elements */
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-ring-offset);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+img, svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* Editorial typography classes */
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+.font-sans {
+  font-family: var(--font-sans);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Utility to ensure content surface is clean flat white with thin border */
+.surface-white {
+  background-color: var(--color-surface-white);
+  border: 1px solid var(--color-border);
+}
+
+.surface-ivory {
+  background-color: var(--color-ivory);
+  border: 1px solid var(--color-border);
+}
+
+.surface-forest {
+  background-color: var(--color-forest);
+  color: var(--color-ivory-light);
+  border: 1px solid var(--color-forest-border);
+}

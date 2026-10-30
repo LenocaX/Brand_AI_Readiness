@@ -1,0 +1,113 @@
+:root {
+  /* Core Brand Tokens */
+  --color-forest: #173A2C;
+  --color-forest-dark: #0E241B;
+  --color-forest-light: #204C3B;
+  --color-forest-surface: #132E23;
+  --color-forest-border: #2B5743;
+
+  --color-ivory: #F5F3EB;
+  --color-ivory-light: #FAF8F2;
+  --color-ivory-dark: #ECE7DA;
+
+  --color-surface-white: #FFFFFF;
+
+  --color-charcoal: #242923;
+  --color-charcoal-muted: #576156;
+  --color-charcoal-subtle: #7A8679;
+
+  --color-sage: #B9D6B7;
+  --color-sage-light: #E7F0E6;
+  --color-sage-muted: #648262;
+
+  --color-border: #DCD7C9;
+  --color-border-dark: #2A4F3E;
+  --color-border-subtle: #E8E4DA;
+
+  /* Restrained Semantic Severity Tokens */
+  --color-critical: #992E24;
+  --color-critical-bg: #FCF1F0;
+  --color-critical-border: #E8B4AF;
+
+  --color-high: #B84E1F;
+  --color-high-bg: #FCF3ED;
+  --color-high-border: #ECC4AE;
+
+  --color-medium: #966014;
+  --color-medium-bg: #FDF7EC;
+  --color-medium-border: #E8CDA0;
+
+  --color-low: #2B6652;
+  --color-low-bg: #EEF6F2;
+  --color-low-border: #B7D9CC;
+
+  --color-info: #355364;
+  --color-info-bg: #EEF4F7;
+  --color-info-border: #B7CBD6;
+
+  --color-success: #1C5E3B;
+  --color-success-bg: #EDF7F1;
+  --color-success-border: #A8D8BD;
+
+  /* Typography */
+  --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-serif: 'IBM Plex Serif', Georgia, 'Times New Roman', serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Type Scale */
+  --text-2xs: 0.6875rem; /* 11px */
+  --text-xs: 0.75rem;     /* 12px */
+  --text-sm: 0.875rem;    /* 14px */
+  --text-base: 1rem;      /* 16px */
+  --text-lg: 1.125rem;    /* 18px */
+  --text-xl: 1.25rem;     /* 20px */
+  --text-2xl: 1.5rem;     /* 24px */
+  --text-3xl: 1.875rem;   /* 30px */
+  --text-4xl: 2.25rem;    /* 36px */
+  --text-5xl: 2.75rem;    /* 44px */
+
+  /* Line Heights */
+  --leading-none: 1;
+  --leading-tight: 1.2;
+  --leading-snug: 1.35;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+
+  /* Letter Spacing */
+  --tracking-tighter: -0.02em;
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.04em;
+  --tracking-wider: 0.08em;
+  --tracking-widest: 0.12em;
+
+  /* Spacing Scale */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-5: 1.25rem;  /* 20px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-10: 2.5rem;  /* 40px */
+  --space-12: 3rem;    /* 48px */
+  --space-16: 4rem;    /* 64px */
+
+  /* Borders & Radii - Minimal, crisp corner rounding */
+  --border-width: 1px;
+  --radius-none: 0px;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-pill: 9999px;
+
+  /* Focus Ring */
+  --focus-ring: 2px solid var(--color-forest);
+  --focus-ring-offset: 2px;
+  --focus-ring-dark: 2px solid var(--color-sage);
+
+  /* Layout */
+  --sidebar-width: 240px;
+  --header-height: 56px;
+  --max-content-width: 1280px;
+}
