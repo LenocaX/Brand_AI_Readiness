@@ -5,6 +5,7 @@ import { Badge } from '../design-system/Badge';
 import { ScoreCard, DimensionMeter } from '../design-system/ScoreDisplay';
 import { PageHeading } from '../design-system/PageHeading';
 import { DownloadIcon, ExternalLink, ArrowRight } from '../design-system/Indicators';
+import { AICrawlersSection } from '../components/AICrawlersSection';
 
 export interface ReportOverviewViewProps {
   report: AuditReport;
@@ -353,6 +354,9 @@ export const ReportOverviewView: React.FC<ReportOverviewViewProps> = ({
           </div>
         )}
       </div>
+
+      {/* AI Search & LLM Crawlers Inspection */}
+      <AICrawlersSection url={site} />
 
       {/* Main 2-Column Grid: Left Analytics vs Right Metadata & Action Plan */}
       <div

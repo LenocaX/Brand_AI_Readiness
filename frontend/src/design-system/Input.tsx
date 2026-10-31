@@ -3,6 +3,7 @@ import React from 'react';
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   helperText?: string;
+  hint?: string;
   errorMessage?: string;
   actionButton?: React.ReactNode;
 }
@@ -10,6 +11,7 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 export const Input: React.FC<InputProps> = ({
   label,
   helperText,
+  hint,
   errorMessage,
   actionButton,
   id,
@@ -17,6 +19,7 @@ export const Input: React.FC<InputProps> = ({
   ...props
 }) => {
   const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+  const resolvedHint = hint || helperText;
 
   return (
     <div className={`input-wrapper ${className}`.trim()}>
@@ -38,8 +41,8 @@ export const Input: React.FC<InputProps> = ({
         <span className="input-error" role="alert">
           {errorMessage}
         </span>
-      ) : helperText ? (
-        <span className="input-hint">{helperText}</span>
+      ) : resolvedHint ? (
+        <span className="input-hint">{resolvedHint}</span>
       ) : null}
     </div>
   );

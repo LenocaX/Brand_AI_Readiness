@@ -8,23 +8,46 @@ export interface Column<T> {
   align?: 'left' | 'center' | 'right';
 }
 
-export interface TableProps<T> {
-  columns: Column<T>[];
-  data: T[];
-  keyExtractor: (row: T) => string;
+export interface TableProps<T = any> {
+  columns?: Column<T>[];
+  data?: T[];
+  keyExtractor?: (row: T) => string;
   emptyMessage?: string;
   onRowClick?: (row: T) => void;
   className?: string;
+  children?: React.ReactNode;
 }
 
-export function Table<T>({
+export function Table<T = any>({
   columns,
   data,
   keyExtractor,
   emptyMessage = 'No records found.',
   onRowClick,
   className = '',
+  children,
 }: TableProps<T>) {
+  if (children) {
+    return (
+      <div
+        style={{
+          overflowX: 'auto',
+          border: '1px solid var(--color-border)',
+          borderRadius: 'var(--radius-sm)',
+          backgroundColor: 'var(--color-surface-white)',
+        }}
+        className={className}
+      >
+        <table className="audit-table">
+          {children}
+        </table>
+      </div>
+    );
+  }
+
+  const safeCols = columns || [];
+  const safeData = data || [];
+
   return (
     <div
       style={{
@@ -38,7 +61,7 @@ export function Table<T>({
       <table className="audit-table">
         <thead>
           <tr>
-            {columns.map((col, idx) => (
+            {safeCols.map((col, idx) => (
               <th
                 key={idx}
                 style={{
@@ -52,10 +75,10 @@ export function Table<T>({
           </tr>
         </thead>
         <tbody>
-          {data.length === 0 ? (
+          {safeData.length === 0 ? (
             <tr>
               <td
-                colSpan={columns.length}
+                colSpan={safeCols.length}
                 style={{
                   textAlign: 'center',
                   padding: 'var(--space-8)',
@@ -66,13 +89,13 @@ export function Table<T>({
               </td>
             </tr>
           ) : (
-            data.map((row) => (
+            safeData.map((row) => (
               <tr
-                key={keyExtractor(row)}
+                key={keyExtractor ? keyExtractor(row) : Math.random().toString()}
                 onClick={() => onRowClick && onRowClick(row)}
                 style={onRowClick ? { cursor: 'pointer' } : undefined}
               >
-                {columns.map((col, idx) => (
+                {safeCols.map((col, idx) => (
                   <td
                     key={idx}
                     style={{
@@ -94,3 +117,7 @@ export function Table<T>({
     </div>
   );
 }
+
+export const TableHeader: React.FC<React.ThHTMLAttributes<HTMLTableCellElement>> = (props) => <th {...props} />;
+export const TableRow: React.FC<React.HTMLAttributes<HTMLTableRowElement>> = (props) => <tr {...props} />;
+export const TableCell: React.FC<React.TdHTMLAttributes<HTMLTableCellElement>> = (props) => <td {...props} />;
