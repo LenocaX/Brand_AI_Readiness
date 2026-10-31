@@ -3,6 +3,7 @@ import React from 'react';
 export type ButtonVariant =
   | 'primary'
   | 'secondary'
+  | 'outline'
   | 'outline-forest'
   | 'outline-ivory'
   | 'ghost';
@@ -29,7 +30,8 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const variantClass = `btn-${variant}`;
+  const resolvedVariant = variant === 'outline' ? 'outline-forest' : variant;
+  const variantClass = `btn-${resolvedVariant}`;
   const sizeClass = size === 'sm' ? 'btn-sm' : size === 'lg' ? 'btn-lg' : '';
   const widthStyle = fullWidth ? { width: '100%' } : undefined;
 

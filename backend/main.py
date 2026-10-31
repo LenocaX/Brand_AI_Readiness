@@ -16,10 +16,22 @@ import uuid
 import threading
 import logging
 
+from backend.database import init_db, SessionLocal
+from backend.models_db import AuditRun
+from backend.routers.audits import persist_audit_report_to_db
+from backend.routers import (
+    auth as auth_router,
+    websites as websites_router,
+    audits as audits_router,
+    performance as performance_router,
+    analytics as analytics_router,
+    monitoring as monitoring_router,
+)
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("brand-ai-readiness")
 
-app = FastAPI(title="Brand AI Readiness Audit")
+app = FastAPI(title="Canopy — Website Intelligence & Brand AI-Readiness Platform")
 
 # Enable CORS for local frontend development
 app.add_middleware(
@@ -30,28 +42,47 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Register modular routers
+app.include_router(auth_router.router)
+app.include_router(websites_router.router)
+app.include_router(audits_router.router)
+app.include_router(performance_router.router)
+app.include_router(analytics_router.router)
+app.include_router(monitoring_router.router)
+
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "skills" / "audit-orchestrator" / "scripts" / "audit.py"
 REPORTS_DIR = ROOT / "reports" / "jobs"
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 SAMPLE_REPORT = ROOT / "reports" / "sample_report.json"
 DIST = ROOT / "frontend" / "dist"
+TRACKER_JS = ROOT / "frontend" / "public" / "tracker.js"
 
-# In-memory job repository
+@app.on_event("startup")
+def startup_event():
+    logger.info("Initializing Canopy persistent database architecture...")
+    init_db()
+    logger.info("Canopy database initialized successfully.")
+
+# In-memory job repository for active runtime tracking
 jobs: Dict[str, Dict[str, Any]] = {}
 job_processes: Dict[str, subprocess.Popen] = {}
 jobs_lock = threading.Lock()
 
+
 class AuditRequest(BaseModel):
     url: HttpUrl
     sync: Optional[bool] = False
+    website_id: Optional[str] = None
 
-def run_audit_worker(job_id: str, target_url: str, report_file_path: Path):
+
+def run_audit_worker(job_id: str, target_url: str, report_file_path: Path, website_id: Optional[str] = None):
     """
     Background worker that runs the Python audit orchestrator script,
     tracks the actual stdout stages for the 5 specialist skills,
     and updates the job state authentically without synthetic progress.
-    Saves and reads exclusively from an isolated per-job report file.
+    Saves and reads exclusively from an isolated per-job report file,
+    then automatically persists findings and scores to the relational database.
     """
     logger.info(f"Starting audit job {job_id} for URL: {target_url}")
 
@@ -140,6 +171,23 @@ def run_audit_worker(job_id: str, target_url: str, report_file_path: Path):
                     jobs[job_id]["status"] = "completed"
                     jobs[job_id]["completed_at"] = datetime.now(timezone.utc).isoformat()
                     jobs[job_id]["report"] = report_data
+
+                    # Persist to relational database
+                    try:
+                        db_session = SessionLocal()
+                        try:
+                            persist_audit_report_to_db(
+                                db=db_session,
+                                job_id=job_id,
+                                target_url=target_url,
+                                report=report_data,
+                                website_id=website_id or jobs[job_id].get("website_id"),
+                            )
+                        finally:
+                            db_session.close()
+                    except Exception as db_err:
+                        logger.warning(f"Could not persist report to database for job {job_id}: {db_err}")
+
                 except Exception as parse_err:
                     logger.error(f"Failed to parse report file for job {job_id}: {parse_err}")
                     jobs[job_id]["status"] = "failed"
@@ -169,9 +217,21 @@ def run_audit_worker(job_id: str, target_url: str, report_file_path: Path):
         with jobs_lock:
             job_processes.pop(job_id, None)
 
+
 @app.get("/api/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok", "platform": "Canopy Intelligence"}
+
+
+@app.get("/tracker.js")
+def serve_tracker_script():
+    """
+    Serves the embeddable Canopy analytics tracking SDK.
+    """
+    if TRACKER_JS.exists():
+        return FileResponse(TRACKER_JS, media_type="application/javascript")
+    raise HTTPException(status_code=404, detail="tracker.js not found.")
+
 
 @app.get("/api/sample-report")
 def get_sample_report():
@@ -180,6 +240,7 @@ def get_sample_report():
     sample_data = json.loads(SAMPLE_REPORT.read_text(encoding="utf-8"))
     sample_data["is_sample"] = True
     return sample_data
+
 
 def validate_target_url(url_str: str):
     """
@@ -208,6 +269,7 @@ def validate_target_url(url_str: str):
     except ValueError:
         pass
 
+
 @app.post("/api/jobs")
 def create_job(request: AuditRequest):
     """
@@ -221,6 +283,7 @@ def create_job(request: AuditRequest):
     job_data = {
         "job_id": job_id,
         "url": target_url,
+        "website_id": request.website_id,
         "status": "pending",
         "current_stage": "crawl",
         "stages": {
@@ -244,22 +307,46 @@ def create_job(request: AuditRequest):
     # Launch worker in background daemon thread with unique output path
     thread = threading.Thread(
         target=run_audit_worker,
-        args=(job_id, target_url, job_report_file),
+        args=(job_id, target_url, job_report_file, request.website_id),
         daemon=True,
     )
     thread.start()
 
     return job_data
 
+
 @app.get("/api/jobs/{job_id}")
 def get_job_status(job_id: str):
     """
     Returns authentic status of an ongoing or completed audit job.
+    Falls back seamlessly to the persistent database if restarted.
     """
     with jobs_lock:
-        if job_id not in jobs:
-            raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
-        return jobs[job_id]
+        if job_id in jobs:
+            return jobs[job_id]
+
+    # Database fallback check
+    db = SessionLocal()
+    try:
+        run = db.query(AuditRun).filter(AuditRun.id == job_id).first()
+        if run:
+            return {
+                "job_id": run.id,
+                "url": run.target_url,
+                "status": run.status,
+                "current_stage": run.current_stage,
+                "stages": run.stages,
+                "created_at": run.created_at.isoformat() if run.created_at else None,
+                "completed_at": run.completed_at.isoformat() if run.completed_at else None,
+                "error": run.error_message,
+                "report": run.full_report_json,
+                "report_file": None,
+            }
+    finally:
+        db.close()
+
+    raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
+
 
 @app.post("/api/jobs/{job_id}/cancel")
 def cancel_job(job_id: str):
@@ -279,10 +366,12 @@ def cancel_job(job_id: str):
                 jobs[job_id]["stages"][st_name] = "failed"
         return {"status": "cancelled", "job_id": job_id}
 
+
 # Alias endpoint for /api/audits/{job_id}
 @app.get("/api/audits/{job_id}")
 def get_audit_by_id(job_id: str):
     return get_job_status(job_id)
+
 
 @app.post("/api/audits")
 def create_audit(request: AuditRequest, sync: bool = Query(default=False)):
@@ -316,9 +405,28 @@ def create_audit(request: AuditRequest, sync: bool = Query(default=False)):
                 status_code=500,
                 detail="Audit execution failed during page crawl or specialist evaluation.",
             )
-        return json.loads(sync_report_file.read_text(encoding="utf-8"))
+        report_data = json.loads(sync_report_file.read_text(encoding="utf-8"))
+        
+        # Persist sync report to DB
+        try:
+            db_session = SessionLocal()
+            try:
+                persist_audit_report_to_db(
+                    db=db_session,
+                    job_id=job_id,
+                    target_url=target_url,
+                    report=report_data,
+                    website_id=request.website_id,
+                )
+            finally:
+                db_session.close()
+        except Exception as e:
+            logger.warning(f"Could not persist sync audit: {e}")
+
+        return report_data
 
     return create_job(request)
+
 
 @app.get("/api/report")
 def get_report(job_id: Optional[str] = Query(default=None)):
@@ -330,12 +438,22 @@ def get_report(job_id: Optional[str] = Query(default=None)):
         raise HTTPException(status_code=400, detail="job_id is required to fetch an audit report.")
 
     with jobs_lock:
-        if job_id not in jobs:
-            raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
-        job = jobs[job_id]
-        if job.get("status") != "completed" or not job.get("report"):
-            raise HTTPException(status_code=404, detail=f"No completed report available for job '{job_id}'.")
-        return job["report"]
+        if job_id in jobs:
+            job = jobs[job_id]
+            if job.get("status") == "completed" and job.get("report"):
+                return job["report"]
+
+    # Check database
+    db = SessionLocal()
+    try:
+        run = db.query(AuditRun).filter(AuditRun.id == job_id).first()
+        if run and run.full_report_json:
+            return run.full_report_json
+    finally:
+        db.close()
+
+    raise HTTPException(status_code=404, detail=f"No completed report available for job '{job_id}'.")
+
 
 # Serve frontend build if dist exists
 if DIST.exists():
@@ -344,7 +462,7 @@ if DIST.exists():
 
     @app.get("/{full_path:path}")
     def serve_spa(full_path: str = ""):
-        if full_path.startswith("api/"):
+        if full_path.startswith("api/") or full_path == "tracker.js":
             raise HTTPException(status_code=404, detail="Not Found")
         file_path = DIST / full_path
         if full_path and file_path.is_file():

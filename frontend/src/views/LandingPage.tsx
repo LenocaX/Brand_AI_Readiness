@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../design-system/Button';
 import { Badge } from '../design-system/Badge';
-import { ArrowRight, StatusDot, ExternalLink } from '../design-system/Indicators';
+import { ArrowRight } from '../design-system/Indicators';
+import { checkRepeatUrl } from '../api/client';
 
 export interface LandingPageProps {
   onStartAudit: (url: string) => void;
@@ -10,6 +11,7 @@ export interface LandingPageProps {
   errorMessage?: string;
   onOpenAbout: () => void;
   onOpenHowItWorks: () => void;
+  onViewPreviousAudit?: (auditId: string) => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
@@ -17,11 +19,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onViewSample,
   isLoading,
   errorMessage,
-  onOpenAbout,
-  onOpenHowItWorks,
+  onViewPreviousAudit,
 }) => {
   const [url, setUrl] = useState('');
   const [validationError, setValidationError] = useState('');
+  const [repeatInfo, setRepeatInfo] = useState<any | null>(null);
+
+  // Check repeat URL on debounce
+  useEffect(() => {
+    const trimmed = url.trim();
+    if (trimmed.length > 4 && trimmed.includes('.')) {
+      const timer = setTimeout(() => {
+        checkRepeatUrl(trimmed)
+          .then((res) => {
+            if (res.last_audit || res.is_registered) {
+              setRepeatInfo(res);
+            } else {
+              setRepeatInfo(null);
+            }
+          })
+          .catch(() => setRepeatInfo(null));
+      }, 500);
+      return () => clearTimeout(timer);
+    } else {
+      setRepeatInfo(null);
+    }
+  }, [url]);
 
   const validateUrl = (input: string): string | null => {
     const trimmed = input.trim();
@@ -31,7 +54,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
     let parsed: URL;
     try {
-      // Check for non-HTTP protocol like ftp://, file://, etc.
       if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(trimmed)) {
         if (!/^https?:\/\//i.test(trimmed)) {
           return 'URL must start with http:// or https://.';
@@ -44,7 +66,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       return 'Please enter a valid website URL (e.g., https://example.com).';
     }
 
-    // SSRF / Local address sanity check
     const host = parsed.hostname.toLowerCase();
     if (
       host === 'localhost' ||
@@ -65,7 +86,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (isLoading) return; // Prevent repeated clicks while in progress
+    if (isLoading) return;
 
     const error = validateUrl(url);
     if (error) {
@@ -88,7 +109,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       {/* Hero Section */}
       <section style={{ padding: 'var(--space-10) 0 var(--space-12)', maxWidth: '840px', margin: '0 auto' }}>
         <div>
-          <div className="page-eyebrow">CANOPY &middot; BRAND AI-READINESS AUDIT</div>
+          <div className="page-eyebrow">CANOPY &middot; UNIFIED WEBSITE INTELLIGENCE</div>
           <h1
             className="font-serif"
             style={{
@@ -100,7 +121,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               letterSpacing: 'var(--tracking-tight)',
             }}
           >
-            See how AI and visitors interpret your website.
+            See how AI search and visitors experience your website.
           </h1>
 
           <p
@@ -112,7 +133,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               maxWidth: '700px',
             }}
           >
-            Canopy audits your website&apos;s AI discoverability, content extractability, structured data, and visitor orientation. Get clear, evidence-backed findings and actionable recommendations without invasive modifications.
+            Canopy unites AI discoverability, performance Core Web Vitals, and real-world visitor engagement into a single evidence-driven continuous intelligence platform.
           </p>
 
           {/* URL Submission Form */}
@@ -138,32 +159,60 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     setUrl(e.target.value);
                     if (validationError) setValidationError('');
                   }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleSubmit();
-                    }
-                  }}
                   placeholder="https://example.com"
                   disabled={isLoading}
-                  aria-invalid={!!activeError}
-                  aria-describedby={activeError ? 'url-error-msg' : 'url-helper-msg'}
                 />
                 <Button
                   type="submit"
                   variant="primary"
                   size="lg"
                   disabled={isLoading}
-                  icon={
-                    isLoading ? (
-                      <span className="symbol-dot" style={{ backgroundColor: 'var(--color-ivory-light)' }} />
-                    ) : (
-                      <ArrowRight size={16} color="var(--color-ivory-light)" />
-                    )
-                  }
+                  icon={<ArrowRight size={16} color="var(--color-ivory-light)" />}
                 >
-                  {isLoading ? 'Starting Audit...' : 'Start Audit'}
+                  {isLoading ? 'Starting Audit...' : 'Audit Website'}
                 </Button>
               </div>
+
+              {/* Repeat URL Recognition Card */}
+              {repeatInfo?.last_audit && (
+                <div
+                  style={{
+                    marginTop: 'var(--space-3)',
+                    padding: 'var(--space-3) var(--space-4)',
+                    backgroundColor: 'var(--color-ivory-light)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-sm)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: 'var(--space-2)',
+                  }}
+                >
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--color-charcoal)' }}>
+                    <strong>Historical Audit on Record:</strong> Audited on{' '}
+                    {repeatInfo.last_audit.completed_at
+                      ? new Date(repeatInfo.last_audit.completed_at).toLocaleDateString()
+                      : 'recently'}{' '}
+                    (Score: <strong>{repeatInfo.last_audit.readiness_score}/100</strong>)
+                  </div>
+                  <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                    {onViewPreviousAudit && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onViewPreviousAudit(repeatInfo.last_audit.id)}
+                      >
+                        View Previous Report
+                      </Button>
+                    )}
+                    <Button type="submit" variant="primary" size="sm">
+                      Run Fresh Audit
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'var(--space-3)', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
                 {activeError ? (
@@ -172,7 +221,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   </span>
                 ) : (
                   <span id="url-helper-msg" className="input-hint">
-                    Enter any public HTTP or HTTPS web address to begin inspection.
+                    Enter any public HTTP or HTTPS web address to inspect AI discoverability and speed.
                   </span>
                 )}
                 <button
@@ -206,306 +255,57 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             }}
           >
             <Badge variant="neutral" showDot>
-              Read-only audit
+              Read-only diagnostic
             </Badge>
             <Badge variant="neutral" showDot>
-              Public website only
+              Core Web Vitals lab
             </Badge>
             <Badge variant="neutral" showDot>
-              No data is stored
+              Privacy-first tracking
             </Badge>
           </div>
         </div>
       </section>
 
-      {/* Factual Explanation of Process & Data Handling */}
-      <section
-        style={{
-          borderTop: '1px solid var(--color-border)',
-          borderBottom: '1px solid var(--color-border)',
-          padding: 'var(--space-6) 0',
-          backgroundColor: 'var(--color-ivory)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--space-4)' }}>
-          <div>
-            <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--color-charcoal)' }}>
-              Non-Invasive, Read-Only Auditing Pipeline
+      {/* Feature Showcase Grid */}
+      <section style={{ padding: '0 0 var(--space-12)', borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-10)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-6)' }}>
+          <div style={{ padding: 'var(--space-4)', backgroundColor: 'var(--color-surface-white)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)' }}>
+            <h3 className="font-serif" style={{ fontSize: 'var(--text-base)', margin: '0 0 var(--space-2) 0', color: 'var(--color-forest)' }}>
+              1. AI Discoverability
             </h3>
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-charcoal-muted)', marginTop: '2px' }}>
-              The audit engine performs standard HTTP GET inspections. It does not store user credentials, modify website content, or submit forms.
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-            <button
-              onClick={onOpenHowItWorks}
-              style={{
-                fontSize: 'var(--text-xs)',
-                fontWeight: 600,
-                color: 'var(--color-forest)',
-                textDecoration: 'underline',
-                cursor: 'pointer',
-              }}
-            >
-              How It Works →
-            </button>
-            <button
-              onClick={onOpenAbout}
-              style={{
-                fontSize: 'var(--text-xs)',
-                fontWeight: 600,
-                color: 'var(--color-forest)',
-                textDecoration: 'underline',
-                cursor: 'pointer',
-              }}
-            >
-              About the Platform →
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* Five Specialist Audit Capabilities Explanation */}
-      {/* Formatted in a compliant 2-column editorial structure, avoiding 3 cards in one row */}
-      <section style={{ padding: 'var(--space-10) 0 var(--space-8)' }}>
-        <div className="page-eyebrow">FIVE SPECIALIST AUDIT CAPABILITIES</div>
-        <h2
-          className="font-serif"
-          style={{
-            fontSize: 'var(--text-2xl)',
-            fontWeight: 500,
-            color: 'var(--color-charcoal)',
-            marginBottom: 'var(--space-6)',
-          }}
-        >
-          Rigorous analysis from crawler entry to visitor orientation.
-        </h2>
-
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: 'var(--space-5)',
-          }}
-        >
-          {/* Capability 1 */}
-          <div
-            style={{
-              backgroundColor: 'var(--color-surface-white)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-sm)',
-              padding: 'var(--space-5)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
-              <div
-                style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: 'var(--radius-pill)',
-                  backgroundColor: 'var(--color-forest)',
-                  color: 'var(--color-ivory-light)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 'var(--text-xs)',
-                  fontWeight: 600,
-                }}
-              >
-                1
-              </div>
-              <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>Crawl & Render Audit</h3>
-            </div>
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-charcoal-muted)', lineHeight: 'var(--leading-relaxed)' }}>
-              Detects HTTP 4xx/5xx crawl barriers, evaluates title tags, meta descriptions, and verifies client-side JavaScript rendering behavior against raw HTML.
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-charcoal-muted)', margin: 0, lineHeight: 'var(--leading-relaxed)' }}>
+              Verify whether GPTBot, ClaudeBot, and PerplexityBot are permitted in robots.txt, and inspect Schema.org entity structured data.
             </p>
           </div>
 
-          {/* Capability 2 */}
-          <div
-            style={{
-              backgroundColor: 'var(--color-surface-white)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-sm)',
-              padding: 'var(--space-5)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
-              <div
-                style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: 'var(--radius-pill)',
-                  backgroundColor: 'var(--color-forest)',
-                  color: 'var(--color-ivory-light)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 'var(--text-xs)',
-                  fontWeight: 600,
-                }}
-              >
-                2
-              </div>
-              <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>Structured Data Audit</h3>
-            </div>
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-charcoal-muted)', lineHeight: 'var(--leading-relaxed)' }}>
-              Inspects Schema.org JSON-LD blocks, verifies required entity properties, and checks semantic metadata essential for AI knowledge graph ingestion.
+          <div style={{ padding: 'var(--space-4)', backgroundColor: 'var(--color-surface-white)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)' }}>
+            <h3 className="font-serif" style={{ fontSize: 'var(--text-base)', margin: '0 0 var(--space-2) 0', color: 'var(--color-forest)' }}>
+              2. Performance Lab
+            </h3>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-charcoal-muted)', margin: 0, lineHeight: 'var(--leading-relaxed)' }}>
+              Measure Core Web Vitals (LCP, INP, CLS) and detect oversized images that slow down mobile and desktop visitor experiences.
             </p>
           </div>
 
-          {/* Capability 3 */}
-          <div
-            style={{
-              backgroundColor: 'var(--color-surface-white)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-sm)',
-              padding: 'var(--space-5)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
-              <div
-                style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: 'var(--radius-pill)',
-                  backgroundColor: 'var(--color-forest)',
-                  color: 'var(--color-ivory-light)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 'var(--text-xs)',
-                  fontWeight: 600,
-                }}
-              >
-                3
-              </div>
-              <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>Content Extractability</h3>
-            </div>
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-charcoal-muted)', lineHeight: 'var(--leading-relaxed)' }}>
-              Measures explicit machine-readable text density, audits descriptive image alt attributes, and checks that core facts are not hidden inside non-text elements.
+          <div style={{ padding: 'var(--space-4)', backgroundColor: 'var(--color-surface-white)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)' }}>
+            <h3 className="font-serif" style={{ fontSize: 'var(--text-base)', margin: '0 0 var(--space-2) 0', color: 'var(--color-forest)' }}>
+              3. Visitor Intelligence
+            </h3>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-charcoal-muted)', margin: 0, lineHeight: 'var(--leading-relaxed)' }}>
+              Install an ultra-lightweight (&lt; 4KB) privacy-first script to measure traffic acquisition, country distribution, and scroll depth.
             </p>
           </div>
 
-          {/* Capability 4 */}
-          <div
-            style={{
-              backgroundColor: 'var(--color-surface-white)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-sm)',
-              padding: 'var(--space-5)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
-              <div
-                style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: 'var(--radius-pill)',
-                  backgroundColor: 'var(--color-forest)',
-                  color: 'var(--color-ivory-light)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 'var(--text-xs)',
-                  fontWeight: 600,
-                }}
-              >
-                4
-              </div>
-              <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>Freshness & Proof</h3>
-            </div>
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-charcoal-muted)', lineHeight: 'var(--leading-relaxed)' }}>
-              Validates date markers, copyright currency, and verifies whether factual statements and assertions provide supporting corroboration.
-            </p>
-          </div>
-
-          {/* Capability 5 */}
-          <div
-            style={{
-              backgroundColor: 'var(--color-surface-white)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 'var(--radius-sm)',
-              padding: 'var(--space-5)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
-              <div
-                style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: 'var(--radius-pill)',
-                  backgroundColor: 'var(--color-forest)',
-                  color: 'var(--color-ivory-light)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 'var(--text-xs)',
-                  fontWeight: 600,
-                }}
-              >
-                5
-              </div>
-              <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>Engagement Audit</h3>
-            </div>
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-charcoal-muted)', lineHeight: 'var(--leading-relaxed)' }}>
-              Evaluates heading hierarchy (H1 presence), primary navigation clarity, call-to-action discoverability, and flags dead-end navigation states.
-            </p>
-          </div>
-
-          {/* Orchestrator Summary */}
-          <div
-            style={{
-              backgroundColor: 'var(--color-ivory-light)',
-              border: '1px solid var(--color-forest-border)',
-              borderRadius: 'var(--radius-sm)',
-              padding: 'var(--space-5)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', marginBottom: 'var(--space-2)' }}>
-              <StatusDot status="completed" size={10} />
-              <h3 style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--color-forest)' }}>
-                Audit Orchestrator & Scoring
-              </h3>
-            </div>
-            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-charcoal-muted)', lineHeight: 'var(--leading-relaxed)' }}>
-              Deduplicates findings, computes readiness and engagement scores from 0–100, assigns severity priorities, and validates output against the report schema.
+          <div style={{ padding: 'var(--space-4)', backgroundColor: 'var(--color-surface-white)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)' }}>
+            <h3 className="font-serif" style={{ fontSize: 'var(--text-base)', margin: '0 0 var(--space-2) 0', color: 'var(--color-forest)' }}>
+              4. Continuous Monitoring
+            </h3>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-charcoal-muted)', margin: 0, lineHeight: 'var(--leading-relaxed)' }}>
+              Schedule automated periodic audits, benchmark against competitors, and receive instant alerts for technical regressions.
             </p>
           </div>
         </div>
-      </section>
-
-      {/* Action Footer Callout */}
-      <section
-        style={{
-          marginTop: 'var(--space-8)',
-          backgroundColor: 'var(--color-surface-white)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-sm)',
-          padding: 'var(--space-6)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 'var(--space-4)',
-        }}
-      >
-        <div>
-          <h4 className="font-serif" style={{ fontSize: 'var(--text-lg)', fontWeight: 500, color: 'var(--color-charcoal)' }}>
-            Explore an authentic audit before running yours
-          </h4>
-          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--color-charcoal-muted)', marginTop: '2px' }}>
-            Review findings, confidence ratings, evidence snippets, and recommendations from our sample audit report.
-          </p>
-        </div>
-
-        <Button
-          variant="secondary"
-          onClick={onViewSample}
-          icon={<ExternalLink size={14} />}
-        >
-          Open Sample Report
-        </Button>
       </section>
     </div>
   );

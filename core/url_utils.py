@@ -42,6 +42,12 @@ def is_safe_public_url(url: str) -> bool:
     mitigating SSRF against loopback, private RFC1918 subnets, and cloud metadata.
     """
     try:
+        if not isinstance(url, str):
+            return False
+        url = url.strip()
+        if not url.startswith(("http://", "https://")):
+            url = f"https://{url}"
+
         parsed = urlparse(url)
         if parsed.scheme not in ("http", "https"):
             return False
