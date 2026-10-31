@@ -8,13 +8,14 @@ export interface SidebarProps {
   onNewAudit: () => void;
   findingsCount?: number;
   unreadAlertsCount?: number;
+  isAuditInProgress?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   currentView,
   onNavigate,
   onNewAudit,
-  findingsCount = 0,
+  isAuditInProgress = false,
 }) => {
   return (
     <aside className="app-sidebar" aria-label="Sidebar Navigation">
@@ -36,6 +37,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <nav aria-label="Audit views">
           <ul className="sidebar-nav">
+            {/* Live Audit in Progress Tracker Link */}
+            {isAuditInProgress && (
+              <li style={{ marginBottom: 'var(--space-3)' }}>
+                <button
+                  className={`sidebar-link ${currentView === 'in_progress' ? 'active' : ''}`}
+                  onClick={() => onNavigate('in_progress')}
+                  style={{
+                    backgroundColor: 'rgba(255, 193, 7, 0.18)',
+                    border: '1px solid rgba(255, 193, 7, 0.45)',
+                    color: '#FFE082',
+                    fontWeight: 600,
+                  }}
+                >
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                    <span>⏳</span>
+                    <span>Audit in Progress...</span>
+                  </span>
+                </button>
+              </li>
+            )}
+
             {/* 1. Overview */}
             <li>
               <button
@@ -99,21 +121,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 className={`sidebar-link ${currentView === 'findings' || currentView === 'finding_detail' ? 'active' : ''}`}
                 onClick={() => onNavigate('findings')}
                 aria-current={currentView === 'findings' ? 'page' : undefined}
-                style={{ justifyContent: 'space-between' }}
               >
                 <span>Findings Matrix</span>
-                {findingsCount > 0 && (
-                  <span
-                    style={{
-                      fontSize: 'var(--text-2xs)',
-                      padding: '1px 6px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.12)',
-                      borderRadius: 'var(--radius-pill)',
-                    }}
-                  >
-                    {findingsCount}
-                  </span>
-                )}
               </button>
             </li>
 

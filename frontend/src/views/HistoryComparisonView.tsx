@@ -3,17 +3,21 @@ import { PageHeading } from '../design-system/PageHeading';
 import { Button } from '../design-system/Button';
 import { Badge } from '../design-system/Badge';
 import { Table, TableHeader, TableRow, TableCell } from '../design-system/Table';
-import { AuditHistoryItem, ComparisonDiff, Website } from '../types/audit';
+import { AuditHistoryItem, ComparisonDiff, User, Website } from '../types/audit';
 import { getWebsiteAuditHistory, compareAuditRuns } from '../api/client';
 
 interface HistoryComparisonViewProps {
   website?: Website | null;
   onSelectAudit?: (auditId: string) => void;
+  currentUser?: User | null;
+  onOpenAuth?: () => void;
 }
 
 export const HistoryComparisonView: React.FC<HistoryComparisonViewProps> = ({
   website,
   onSelectAudit,
+  currentUser,
+  onOpenAuth,
 }) => {
   const [tab, setTab] = useState<'timeline' | 'diff'>('timeline');
   const [history, setHistory] = useState<AuditHistoryItem[]>([]);
@@ -25,7 +29,7 @@ export const HistoryComparisonView: React.FC<HistoryComparisonViewProps> = ({
   const [diffLoading, setDiffLoading] = useState(false);
 
   useEffect(() => {
-    if (website?.id) {
+    if (currentUser && website?.id) {
       getWebsiteAuditHistory(website.id)
         .then((items) => {
           setHistory(items);
@@ -35,9 +39,12 @@ export const HistoryComparisonView: React.FC<HistoryComparisonViewProps> = ({
           } else if (items.length === 1) {
             setSelectedB(items[0].id);
           }
-        });
+        })
+        .catch(() => setHistory([]));
+    } else {
+      setHistory([]);
     }
-  }, [website?.id]);
+  }, [website?.id, currentUser]);
 
   const handleRunDiff = async () => {
     if (!selectedA || !selectedB) return;
@@ -51,6 +58,52 @@ export const HistoryComparisonView: React.FC<HistoryComparisonViewProps> = ({
       setDiffLoading(false);
     }
   };
+
+  // If user is not signed in, do not show website history
+  if (!currentUser) {
+    return (
+      <div style={{ maxWidth: '800px', margin: 'var(--space-10) auto', padding: '0 var(--space-4)' }}>
+        <div
+          style={{
+            backgroundColor: 'var(--color-surface-white)',
+            border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-sm)',
+            padding: 'var(--space-10) var(--space-8)',
+            textAlign: 'center',
+          }}
+        >
+          <div style={{ fontSize: '2.5rem', marginBottom: 'var(--space-3)' }}>🔒</div>
+          <h2
+            className="font-serif"
+            style={{
+              fontSize: 'var(--text-2xl)',
+              color: 'var(--color-charcoal)',
+              fontWeight: 500,
+              marginBottom: 'var(--space-2)',
+            }}
+          >
+            Sign In to View Website Audit History
+          </h2>
+          <p
+            style={{
+              fontSize: 'var(--text-sm)',
+              color: 'var(--color-charcoal-muted)',
+              maxWidth: '520px',
+              margin: '0 auto var(--space-6)',
+              lineHeight: 'var(--leading-relaxed)',
+            }}
+          >
+            Historical audit logs, score timelines, and regression diffing are saved for registered accounts. Please sign in or create an account to view and compare historical audits.
+          </p>
+          {onOpenAuth && (
+            <Button variant="primary" onClick={onOpenAuth}>
+              Sign In or Register
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto', paddingBottom: 'var(--space-12)' }}>

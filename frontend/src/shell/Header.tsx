@@ -87,8 +87,8 @@ export const Header: React.FC<HeaderProps> = ({
           />
         </button>
 
-        {/* Website Switcher Dropdown */}
-        {displayedWebsites.length > 0 && onSelectWebsite && (
+        {/* Website Switcher Dropdown - Only for signed in users */}
+        {Boolean(currentUser) && displayedWebsites.length > 0 && onSelectWebsite && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
             <span style={{ fontSize: 'var(--text-2xs)', color: 'rgba(245, 243, 235, 0.7)', textTransform: 'uppercase', letterSpacing: 'var(--tracking-wide)' }}>
               Site:

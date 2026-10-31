@@ -17,6 +17,7 @@ export interface AppShellProps {
   websites?: Website[];
   activeWebsite?: Website | null;
   onSelectWebsite?: (site: Website) => void;
+  isAuditInProgress?: boolean;
   children: React.ReactNode;
 }
 
@@ -32,6 +33,7 @@ export const AppShell: React.FC<AppShellProps> = ({
   websites = [],
   activeWebsite,
   onSelectWebsite,
+  isAuditInProgress = false,
   children,
 }) => {
   const [isTermsOpen, setIsTermsOpen] = useState(false);
@@ -68,6 +70,7 @@ export const AppShell: React.FC<AppShellProps> = ({
             onNewAudit={onNewAudit}
             findingsCount={findingsCount}
             unreadAlertsCount={unreadAlertsCount}
+            isAuditInProgress={isAuditInProgress}
           />
         )}
 

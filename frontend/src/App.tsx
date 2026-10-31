@@ -31,11 +31,74 @@ import {
 import { PageHeading } from './design-system/PageHeading';
 import { Button } from './design-system/Button';
 
-const EmptyAuditState: React.FC<{ onNewAudit: () => void; onLoadSample: () => void }> = ({
-  onNewAudit,
-  onLoadSample,
-}) => (
-  <div style={{ maxWidth: '720px', margin: 'var(--space-8) auto', padding: '0 var(--space-4)' }}>
+const AuditInProgressPlaceholder: React.FC<{
+  targetUrl: string;
+  onViewProgress: () => void;
+  sectionName: string;
+}> = ({ targetUrl, onViewProgress, sectionName }) => (
+  <div style={{ maxWidth: '680px', margin: 'var(--space-10) auto', padding: '0 var(--space-4)' }}>
+    <div
+      style={{
+        backgroundColor: 'var(--color-surface-white)',
+        border: '1px solid var(--color-border)',
+        borderRadius: 'var(--radius-sm)',
+        padding: 'var(--space-10) var(--space-8)',
+        textAlign: 'center',
+      }}
+    >
+      <div
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '4px 12px',
+          backgroundColor: 'rgba(255, 193, 7, 0.12)',
+          border: '1px solid rgba(255, 193, 7, 0.35)',
+          borderRadius: 'var(--radius-pill)',
+          color: 'var(--color-forest)',
+          fontSize: 'var(--text-xs)',
+          fontWeight: 600,
+          marginBottom: 'var(--space-3)',
+        }}
+      >
+        <span>⏳</span>
+        <span>Audit in Progress</span>
+      </div>
+      <h2
+        className="font-serif"
+        style={{
+          fontSize: 'var(--text-2xl)',
+          color: 'var(--color-charcoal)',
+          fontWeight: 500,
+          marginBottom: 'var(--space-2)',
+        }}
+      >
+        {sectionName} Pending
+      </h2>
+      <p
+        style={{
+          fontSize: 'var(--text-sm)',
+          color: 'var(--color-charcoal-muted)',
+          maxWidth: '520px',
+          margin: '0 auto var(--space-6)',
+          lineHeight: 'var(--leading-relaxed)',
+        }}
+      >
+        A live audit is currently in progress for <strong>{targetUrl || 'your website'}</strong>. Previous results have been cleared to guarantee strict data accuracy. Results for this section will appear here automatically once the audit finishes successfully.
+      </p>
+      <Button variant="primary" onClick={onViewProgress}>
+        View Live Progress Tracker &rarr;
+      </Button>
+    </div>
+  </div>
+);
+
+const NoAuditCompletedPlaceholder: React.FC<{
+  onStartAudit: () => void;
+  onLoadSample: () => void;
+  sectionName: string;
+}> = ({ onStartAudit, onLoadSample, sectionName }) => (
+  <div style={{ maxWidth: '680px', margin: 'var(--space-10) auto', padding: '0 var(--space-4)' }}>
     <div
       style={{
         backgroundColor: 'var(--color-surface-white)',
@@ -55,7 +118,7 @@ const EmptyAuditState: React.FC<{ onNewAudit: () => void; onLoadSample: () => vo
           marginBottom: 'var(--space-2)',
         }}
       >
-        No Active Audit
+        Audit Required
       </div>
       <h2
         className="font-serif"
@@ -63,28 +126,28 @@ const EmptyAuditState: React.FC<{ onNewAudit: () => void; onLoadSample: () => vo
           fontSize: 'var(--text-2xl)',
           color: 'var(--color-charcoal)',
           fontWeight: 500,
-          marginBottom: 'var(--space-3)',
+          marginBottom: 'var(--space-2)',
         }}
       >
-        No Audit Report Loaded
+        {sectionName}
       </h2>
       <p
         style={{
           fontSize: 'var(--text-sm)',
           color: 'var(--color-charcoal-muted)',
-          maxWidth: '460px',
+          maxWidth: '500px',
           margin: '0 auto var(--space-6)',
           lineHeight: 'var(--leading-relaxed)',
         }}
       >
-        Run a live audit on any public website to inspect AI-readiness, Core Web Vitals, and engagement, or open the sample audit report.
+        This section is empty because no audit has been run yet. Run a live audit on your website to populate intelligence scores, findings, and recommendations, or explore a demonstration report.
       </p>
       <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'center', flexWrap: 'wrap' }}>
-        <Button variant="primary" onClick={onNewAudit}>
-          Start New Audit
+        <Button variant="primary" onClick={onStartAudit}>
+          Start Website Audit
         </Button>
         <Button variant="secondary" onClick={onLoadSample}>
-          Open Sample Report
+          Explore Demonstration Report
         </Button>
       </div>
     </div>
@@ -130,8 +193,15 @@ export function App() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentFindingId, setCurrentFindingId] = useState<string | null>(null);
 
-  // Load session & websites on mount
+  const isAuditInProgress = Boolean(activeJobId && !activeReport);
+
+  // Load session & websites on mount ONLY if authenticated
   const refreshWebsites = async () => {
+    if (!currentUser) {
+      setWebsites([]);
+      setActiveWebsite(null);
+      return;
+    }
     try {
       const sites = await getWebsites();
       setWebsites(sites);
@@ -148,20 +218,60 @@ export function App() {
       .then((user) => {
         setCurrentUser(user);
         if (user) {
-          refreshWebsites();
+          getWebsites()
+            .then((sites) => {
+              setWebsites(sites);
+              if (sites.length > 0) setActiveWebsite(sites[0]);
+            })
+            .catch(() => {});
+        } else {
+          setWebsites([]);
+          setActiveWebsite(null);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        setCurrentUser(null);
+        setWebsites([]);
+        setActiveWebsite(null);
+      });
   }, []);
 
-  // Refresh alerts count when active website changes
+  // Refresh alerts count when active website changes (only if authenticated)
   useEffect(() => {
-    if (activeWebsite?.id) {
+    if (currentUser && activeWebsite?.id) {
       getWebsiteAlerts(activeWebsite.id, true)
         .then((alerts) => setUnreadAlertsCount(alerts.length))
         .catch(() => {});
+    } else {
+      setUnreadAlertsCount(0);
     }
-  }, [activeWebsite?.id]);
+  }, [currentUser, activeWebsite?.id]);
+
+  // Global background polling for active audit job so navigation never drops the audit
+  useEffect(() => {
+    if (!activeJobId || activeReport) return;
+
+    let isCancelled = false;
+    const pollInterval = setInterval(async () => {
+      try {
+        const job = await getJobStatus(activeJobId);
+        if (isCancelled) return;
+        if (job.status === 'completed' && job.report) {
+          clearInterval(pollInterval);
+          handleAuditCompleted(job.report);
+        } else if (job.status === 'failed' || job.status === 'cancelled') {
+          clearInterval(pollInterval);
+        }
+      } catch {
+        // Retry silently on next cycle
+      }
+    }, 1500);
+
+    return () => {
+      isCancelled = true;
+      clearInterval(pollInterval);
+    };
+  }, [activeJobId, activeReport]);
 
   const handleNavigate = (view: ActiveView, extraParams?: Record<string, string>) => {
     setCurrentView(view);
@@ -185,8 +295,11 @@ export function App() {
     }
   };
 
-  // Synchronize active website to the active report domain whenever a report is loaded or viewed
+  // Synchronize active website to the active report domain ONLY when user is signed in
   useEffect(() => {
+    if (!currentUser) {
+      return;
+    }
     if (activeReport?.site) {
       const repDomain = extractDomain(activeReport.site);
       setActiveWebsite((prev) => {
@@ -199,7 +312,7 @@ export function App() {
         }
         const syncSite: Website = {
           id: `site-${repDomain.replace(/[^a-zA-Z0-9]/g, '_')}`,
-          user_id: currentUser?.id || 'demo_user',
+          user_id: currentUser.id,
           name: repDomain,
           domain: repDomain,
           canonical_url: activeReport.site.startsWith('http') ? activeReport.site : `https://${repDomain}`,
@@ -220,7 +333,7 @@ export function App() {
         return syncSite;
       });
     }
-  }, [activeReport?.site, currentUser?.id, websites]);
+  }, [activeReport?.site, currentUser, websites]);
 
   const handleStartAudit = async (targetUrl: string) => {
     setIsLoading(true);
@@ -228,39 +341,23 @@ export function App() {
     setActiveUrl(targetUrl);
     setIsSampleReport(false);
 
+    // CRITICAL: Clear all previous audit data so that nothing from previous runs is displayed
+    setActiveReport(null);
+    setCurrentFindingId(null);
+    setActiveJobId(null);
+
     const targetDomain = extractDomain(targetUrl);
 
-    // Sync active website immediately to match the audited domain
-    const matchedSite = websites.find(
-      (w) => w.domain.toLowerCase() === targetDomain || targetDomain.includes(w.domain.toLowerCase())
-    );
-
-    if (matchedSite) {
-      setActiveWebsite(matchedSite);
-    } else {
-      const pendingSite: Website = {
-        id: `site-${targetDomain.replace(/[^a-zA-Z0-9]/g, '_')}`,
-        user_id: currentUser?.id || 'demo_user',
-        name: targetDomain,
-        domain: targetDomain,
-        canonical_url: targetUrl.startsWith('http') ? targetUrl : `https://${targetDomain}`,
-        category: 'General',
-        verification_token: `canopy_verify_${Math.random().toString(36).substring(2, 10)}`,
-        is_verified: true,
-        verified_at: new Date().toISOString(),
-        monitoring_enabled: true,
-        monitoring_frequency: 'daily',
-        last_audit_at: new Date().toISOString(),
-        latest_readiness_score: 83,
-        latest_performance_score: 88,
-        latest_engagement_score: 98,
-        latest_health_score: 89,
-        created_at: new Date().toISOString(),
-      };
-      setWebsites((prev) => [pendingSite, ...prev.filter((w) => w.domain !== targetDomain)]);
-      setActiveWebsite(pendingSite);
-
-      if (currentUser) {
+    // If authenticated, sync website record
+    let siteIdToUse: string | undefined = undefined;
+    if (currentUser) {
+      const matchedSite = websites.find(
+        (w) => w.domain.toLowerCase() === targetDomain || targetDomain.includes(w.domain.toLowerCase())
+      );
+      if (matchedSite) {
+        setActiveWebsite(matchedSite);
+        siteIdToUse = matchedSite.id;
+      } else {
         createWebsite(targetUrl, targetDomain, 'Audited Site')
           .then((saved) => {
             setWebsites((prev) => [saved, ...prev.filter((w) => w.domain !== targetDomain)]);
@@ -268,10 +365,12 @@ export function App() {
           })
           .catch(() => {});
       }
+    } else {
+      setActiveWebsite(null);
     }
 
     try {
-      const job = await createAuditJob(targetUrl, matchedSite?.id);
+      const job = await createAuditJob(targetUrl, siteIdToUse);
       setActiveJobId(job.job_id);
       handleNavigate('in_progress', { job_id: job.job_id });
     } catch (err: unknown) {
@@ -289,33 +388,39 @@ export function App() {
 
   const handleLoadSample = async () => {
     setIsLoading(true);
+    setActiveJobId(null);
     try {
       const sample = await getSampleReport();
       setActiveReport(sample);
       setIsSampleReport(true);
       setActiveUrl(sample.site);
-      const domain = extractDomain(sample.site);
-      const sampleSite: Website = {
-        id: 'sample-jiitshelf',
-        user_id: currentUser?.id || 'demo_user',
-        name: domain,
-        domain: domain,
-        canonical_url: sample.site.startsWith('http') ? sample.site : `https://${domain}`,
-        category: 'Demonstration',
-        verification_token: 'canopy_sample_token',
-        is_verified: true,
-        verified_at: new Date().toISOString(),
-        monitoring_enabled: true,
-        monitoring_frequency: 'weekly',
-        last_audit_at: sample.audited_at,
-        latest_readiness_score: sample.readiness?.score ?? 74,
-        latest_performance_score: 88,
-        latest_engagement_score: sample.engagement?.score ?? 95,
-        latest_health_score: 86,
-        created_at: new Date().toISOString(),
-      };
-      setWebsites((prev) => [sampleSite, ...prev.filter((w) => w.domain !== domain)]);
-      setActiveWebsite(sampleSite);
+
+      if (currentUser) {
+        const domain = extractDomain(sample.site);
+        const sampleSite: Website = {
+          id: 'sample-jiitshelf',
+          user_id: currentUser.id,
+          name: domain,
+          domain: domain,
+          canonical_url: sample.site.startsWith('http') ? sample.site : `https://${domain}`,
+          category: 'Demonstration',
+          verification_token: 'canopy_sample_token',
+          is_verified: true,
+          verified_at: new Date().toISOString(),
+          monitoring_enabled: true,
+          monitoring_frequency: 'weekly',
+          last_audit_at: sample.audited_at,
+          latest_readiness_score: sample.readiness?.score ?? 74,
+          latest_performance_score: 88,
+          latest_engagement_score: sample.engagement?.score ?? 95,
+          latest_health_score: 86,
+          created_at: new Date().toISOString(),
+        };
+        setWebsites((prev) => [sampleSite, ...prev.filter((w) => w.domain !== domain)]);
+        setActiveWebsite(sampleSite);
+      } else {
+        setActiveWebsite(null);
+      }
       handleNavigate('overview');
     } catch {
       setActiveReport(sampleReport);
@@ -329,36 +434,42 @@ export function App() {
   const handleAuditCompleted = (report: AuditReport) => {
     setActiveReport(report);
     setIsSampleReport(false);
+    setActiveJobId(null);
     const domain = extractDomain(report.site);
 
-    setActiveWebsite((prev) => {
-      const updatedSite: Website = {
-        id: prev?.domain.toLowerCase() === domain ? prev.id : `site-${domain.replace(/[^a-zA-Z0-9]/g, '_')}`,
-        user_id: currentUser?.id || 'demo_user',
-        name: domain,
-        domain: domain,
-        canonical_url: report.site.startsWith('http') ? report.site : `https://${domain}`,
-        category: 'General',
-        verification_token: prev?.verification_token || `canopy_verify_${Math.random().toString(36).substring(2, 10)}`,
-        is_verified: true,
-        verified_at: prev?.verified_at || new Date().toISOString(),
-        monitoring_enabled: true,
-        monitoring_frequency: 'daily',
-        last_audit_at: report.audited_at || new Date().toISOString(),
-        latest_readiness_score: report.readiness?.score ?? 83,
-        latest_performance_score: 88,
-        latest_engagement_score: report.engagement?.score ?? 98,
-        latest_health_score: Math.round(((report.readiness?.score ?? 80) * 0.5) + ((report.engagement?.score ?? 95) * 0.5)),
-        created_at: prev?.created_at || new Date().toISOString(),
-      };
-      setWebsites((currentSites) => [updatedSite, ...currentSites.filter((w) => w.domain.toLowerCase() !== domain)]);
-      return updatedSite;
-    });
+    if (currentUser) {
+      setActiveWebsite((prev) => {
+        const updatedSite: Website = {
+          id: prev?.domain.toLowerCase() === domain ? prev.id : `site-${domain.replace(/[^a-zA-Z0-9]/g, '_')}`,
+          user_id: currentUser.id,
+          name: domain,
+          domain: domain,
+          canonical_url: report.site.startsWith('http') ? report.site : `https://${domain}`,
+          category: 'General',
+          verification_token: prev?.verification_token || `canopy_verify_${Math.random().toString(36).substring(2, 10)}`,
+          is_verified: true,
+          verified_at: prev?.verified_at || new Date().toISOString(),
+          monitoring_enabled: true,
+          monitoring_frequency: 'daily',
+          last_audit_at: report.audited_at || new Date().toISOString(),
+          latest_readiness_score: report.readiness?.score ?? 83,
+          latest_performance_score: 88,
+          latest_engagement_score: report.engagement?.score ?? 98,
+          latest_health_score: Math.round(((report.readiness?.score ?? 80) * 0.5) + ((report.engagement?.score ?? 95) * 0.5)),
+          created_at: prev?.created_at || new Date().toISOString(),
+        };
+        setWebsites((currentSites) => [updatedSite, ...currentSites.filter((w) => w.domain.toLowerCase() !== domain)]);
+        return updatedSite;
+      });
+    } else {
+      setActiveWebsite(null);
+    }
 
     handleNavigate('overview');
   };
 
   const handleSelectWebsite = async (site: Website) => {
+    if (!currentUser) return;
     setActiveWebsite(site);
     setActiveUrl(site.canonical_url || `https://${site.domain}`);
     try {
@@ -377,6 +488,7 @@ export function App() {
   };
 
   const handleViewPreviousAudit = async (auditId: string) => {
+    if (!currentUser) return;
     try {
       const job = await getJobStatus(auditId);
       if (job.report) {
@@ -424,15 +536,20 @@ export function App() {
     <AppShell
       currentView={currentView}
       onNavigate={handleNavigate}
-      onNewAudit={() => handleNavigate('landing')}
+      onNewAudit={() => {
+        setActiveReport(null);
+        setActiveJobId(null);
+        handleNavigate('landing');
+      }}
       onLoadSample={handleLoadSample}
       findingsCount={findingsCount}
       unreadAlertsCount={unreadAlertsCount}
       currentUser={currentUser}
       onOpenAuth={() => setIsAuthModalOpen(true)}
-      websites={websites}
-      activeWebsite={activeWebsite}
+      websites={currentUser ? websites : []}
+      activeWebsite={currentUser ? activeWebsite : null}
       onSelectWebsite={handleSelectWebsite}
+      isAuditInProgress={isAuditInProgress}
     >
       {/* 1. LANDING PAGE */}
       {currentView === 'landing' && (
@@ -444,6 +561,7 @@ export function App() {
           onOpenAbout={() => {}}
           onOpenHowItWorks={() => {}}
           onViewPreviousAudit={handleViewPreviousAudit}
+          currentUser={currentUser}
         />
       )}
 
@@ -455,10 +573,17 @@ export function App() {
             targetUrl={activeUrl}
             onAuditComplete={handleAuditCompleted}
             onRetry={() => handleStartAudit(activeUrl)}
-            onReturnToDashboard={() => handleNavigate('landing')}
+            onReturnToDashboard={() => {
+              setActiveJobId(null);
+              handleNavigate('landing');
+            }}
           />
         ) : (
-          <EmptyAuditState onNewAudit={() => handleNavigate('landing')} onLoadSample={handleLoadSample} />
+          <NoAuditCompletedPlaceholder
+            onStartAudit={() => handleNavigate('landing')}
+            onLoadSample={handleLoadSample}
+            sectionName="Audit Progress Tracker"
+          />
         )
       )}
 
@@ -497,11 +622,25 @@ export function App() {
               }}
               onNavigateToRecommendations={() => handleNavigate('recommendations')}
               onDownloadReport={handleDownloadReport}
-              onNewAudit={() => handleNavigate('landing')}
+              onNewAudit={() => {
+                setActiveReport(null);
+                setActiveJobId(null);
+                handleNavigate('landing');
+              }}
             />
           </div>
+        ) : isAuditInProgress ? (
+          <AuditInProgressPlaceholder
+            targetUrl={activeUrl}
+            onViewProgress={() => handleNavigate('in_progress')}
+            sectionName="Dashboard Overview"
+          />
         ) : (
-          <EmptyAuditState onNewAudit={() => handleNavigate('landing')} onLoadSample={handleLoadSample} />
+          <NoAuditCompletedPlaceholder
+            onStartAudit={() => handleNavigate('landing')}
+            onLoadSample={handleLoadSample}
+            sectionName="Dashboard Overview"
+          />
         )
       )}
 
@@ -510,8 +649,8 @@ export function App() {
         activeReport ? (
           <div>
             <PageHeading
-              eyebrow="MODULE A — AI READINESS"
-              title={`AI Discoverability & Extractability — ${activeReport.site}`}
+              eyebrow="MODULE A &middot; AI READINESS"
+              title={`AI Discoverability & Extractability &middot; ${activeReport.site}`}
               subtitle="Inspect AI bots robots.txt directives, Schema.org entity graphs, and content density."
             />
             <AICrawlersSection url={activeReport.site} />
@@ -534,26 +673,64 @@ export function App() {
               onSelectFinding={handleSelectFinding}
             />
           </div>
+        ) : isAuditInProgress ? (
+          <AuditInProgressPlaceholder
+            targetUrl={activeUrl}
+            onViewProgress={() => handleNavigate('in_progress')}
+            sectionName="AI Readiness Intelligence"
+          />
         ) : (
-          <EmptyAuditState onNewAudit={() => handleNavigate('landing')} onLoadSample={handleLoadSample} />
+          <NoAuditCompletedPlaceholder
+            onStartAudit={() => handleNavigate('landing')}
+            onLoadSample={handleLoadSample}
+            sectionName="AI Readiness Intelligence"
+          />
         )
       )}
 
       {/* 5. PERFORMANCE LAB VIEW */}
       {currentView === 'performance' && (
-        <PerformanceView
-          websiteId={activeWebsite?.id}
-          targetUrl={activeUrl || activeWebsite?.canonical_url || (activeReport?.site ? `https://${activeReport.site}` : 'https://github.com')}
-          onNavigateToOverview={() => handleNavigate('overview')}
-        />
+        activeReport ? (
+          <PerformanceView
+            websiteId={activeWebsite?.id}
+            targetUrl={activeReport.site.startsWith('http') ? activeReport.site : `https://${activeReport.site}`}
+            onNavigateToOverview={() => handleNavigate('overview')}
+          />
+        ) : isAuditInProgress ? (
+          <AuditInProgressPlaceholder
+            targetUrl={activeUrl}
+            onViewProgress={() => handleNavigate('in_progress')}
+            sectionName="Performance Lab"
+          />
+        ) : (
+          <NoAuditCompletedPlaceholder
+            onStartAudit={() => handleNavigate('landing')}
+            onLoadSample={handleLoadSample}
+            sectionName="Performance Lab"
+          />
+        )
       )}
 
       {/* 6. VISITOR ANALYTICS VIEW */}
       {currentView === 'analytics' && (
-        <AnalyticsView
-          website={activeWebsite}
-          onNavigateToSettings={() => handleNavigate('settings')}
-        />
+        activeReport ? (
+          <AnalyticsView
+            website={activeWebsite}
+            onNavigateToSettings={() => handleNavigate('settings')}
+          />
+        ) : isAuditInProgress ? (
+          <AuditInProgressPlaceholder
+            targetUrl={activeUrl}
+            onViewProgress={() => handleNavigate('in_progress')}
+            sectionName="Visitor Analytics"
+          />
+        ) : (
+          <NoAuditCompletedPlaceholder
+            onStartAudit={() => handleNavigate('landing')}
+            onLoadSample={handleLoadSample}
+            sectionName="Visitor Analytics"
+          />
+        )
       )}
 
       {/* 7. HISTORY & COMPARISON VIEW */}
@@ -561,10 +738,12 @@ export function App() {
         <HistoryComparisonView
           website={activeWebsite}
           onSelectAudit={handleViewPreviousAudit}
+          currentUser={currentUser}
+          onOpenAuth={() => setIsAuthModalOpen(true)}
         />
       )}
 
-      {/* 9. FINDINGS MATRIX VIEW */}
+      {/* 8. FINDINGS MATRIX VIEW */}
       {currentView === 'findings' && (
         activeReport ? (
           <FindingsView
@@ -585,12 +764,22 @@ export function App() {
             }}
             onSelectFinding={handleSelectFinding}
           />
+        ) : isAuditInProgress ? (
+          <AuditInProgressPlaceholder
+            targetUrl={activeUrl}
+            onViewProgress={() => handleNavigate('in_progress')}
+            sectionName="Findings Matrix"
+          />
         ) : (
-          <EmptyAuditState onNewAudit={() => handleNavigate('landing')} onLoadSample={handleLoadSample} />
+          <NoAuditCompletedPlaceholder
+            onStartAudit={() => handleNavigate('landing')}
+            onLoadSample={handleLoadSample}
+            sectionName="Findings Matrix"
+          />
         )
       )}
 
-      {/* 10. FINDING DETAILS */}
+      {/* 9. FINDING DETAILS */}
       {currentView === 'finding_detail' && (
         activeReport && currentFinding ? (
           <FindingDetailView
@@ -602,12 +791,22 @@ export function App() {
             activeFilterSummary={selectedSeverity !== 'all' ? `Severity: ${selectedSeverity}` : 'All Findings'}
             onBack={() => handleNavigate('findings')}
           />
+        ) : isAuditInProgress ? (
+          <AuditInProgressPlaceholder
+            targetUrl={activeUrl}
+            onViewProgress={() => handleNavigate('in_progress')}
+            sectionName="Finding Details"
+          />
         ) : (
-          <EmptyAuditState onNewAudit={() => handleNavigate('landing')} onLoadSample={handleLoadSample} />
+          <NoAuditCompletedPlaceholder
+            onStartAudit={() => handleNavigate('landing')}
+            onLoadSample={handleLoadSample}
+            sectionName="Finding Details"
+          />
         )
       )}
 
-      {/* 11. RECOMMENDATIONS ACTION PLAN */}
+      {/* 10. RECOMMENDATIONS ACTION PLAN */}
       {currentView === 'recommendations' && (
         activeReport ? (
           <RecommendationsView
@@ -625,17 +824,27 @@ export function App() {
               else handleNavigate('findings');
             }}
           />
+        ) : isAuditInProgress ? (
+          <AuditInProgressPlaceholder
+            targetUrl={activeUrl}
+            onViewProgress={() => handleNavigate('in_progress')}
+            sectionName="Action Plan"
+          />
         ) : (
-          <EmptyAuditState onNewAudit={() => handleNavigate('landing')} onLoadSample={handleLoadSample} />
+          <NoAuditCompletedPlaceholder
+            onStartAudit={() => handleNavigate('landing')}
+            onLoadSample={handleLoadSample}
+            sectionName="Action Plan"
+          />
         )
       )}
 
-      {/* 12. SETTINGS VIEW */}
+      {/* 11. SETTINGS VIEW */}
       {currentView === 'settings' && (
         <SettingsView
           currentUser={currentUser}
-          websites={websites}
-          activeWebsite={activeWebsite}
+          websites={currentUser ? websites : []}
+          activeWebsite={currentUser ? activeWebsite : null}
           onSelectWebsite={setActiveWebsite}
           onRefreshWebsites={refreshWebsites}
           onOpenAuth={() => setIsAuthModalOpen(true)}

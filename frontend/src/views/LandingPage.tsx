@@ -3,6 +3,7 @@ import { Button } from '../design-system/Button';
 import { Badge } from '../design-system/Badge';
 import { ArrowRight } from '../design-system/Indicators';
 import { checkRepeatUrl } from '../api/client';
+import { User } from '../types/audit';
 
 export interface LandingPageProps {
   onStartAudit: (url: string) => void;
@@ -12,6 +13,7 @@ export interface LandingPageProps {
   onOpenAbout: () => void;
   onOpenHowItWorks: () => void;
   onViewPreviousAudit?: (auditId: string) => void;
+  currentUser?: User | null;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
@@ -20,13 +22,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   isLoading,
   errorMessage,
   onViewPreviousAudit,
+  currentUser,
 }) => {
   const [url, setUrl] = useState('');
   const [validationError, setValidationError] = useState('');
   const [repeatInfo, setRepeatInfo] = useState<any | null>(null);
 
-  // Check repeat URL on debounce
+  // Check repeat URL on debounce - ONLY for authenticated users
   useEffect(() => {
+    if (!currentUser) {
+      setRepeatInfo(null);
+      return;
+    }
     const trimmed = url.trim();
     if (trimmed.length > 4 && trimmed.includes('.')) {
       const timer = setTimeout(() => {
@@ -44,7 +51,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     } else {
       setRepeatInfo(null);
     }
-  }, [url]);
+  }, [url, currentUser]);
 
   const validateUrl = (input: string): string | null => {
     const trimmed = input.trim();
@@ -173,8 +180,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </Button>
               </div>
 
-              {/* Repeat URL Recognition Card */}
-              {repeatInfo?.last_audit && (
+              {/* Repeat URL Recognition Card - Only shown when user is signed in */}
+              {Boolean(currentUser) && repeatInfo?.last_audit && (
                 <div
                   style={{
                     marginTop: 'var(--space-3)',
